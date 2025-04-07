@@ -36,8 +36,14 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
     }
     
     if (data.error) {
-      console.error("Error in Places API response:", data.error, data.message);
-      throw new Error(data.message || data.error || "Error from Places API");
+      console.error("Error in Places API response:", data.error, data.message || data.error_message);
+      throw new Error(data.message || data.error_message || data.error || "Error from Places API");
+    }
+    
+    // If zero results but status is OK, return empty array without error
+    if (data.status === "ZERO_RESULTS" || (data.results && data.results.length === 0)) {
+      console.log("Zero results returned from Places API");
+      return [];
     }
     
     if (!Array.isArray(data.results)) {

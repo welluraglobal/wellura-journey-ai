@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Star, ExternalLink, Phone, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Star, ExternalLink, Phone, AlertCircle, Loader2, Info } from "lucide-react";
 import { searchNearbyPlaces } from "@/utils/placesApi";
 import { PlaceResult } from "@/utils/types";
 import BackButton from "@/components/BackButton";
@@ -66,15 +66,39 @@ const FindProfessionals = () => {
           description: `We couldn't find any ${professionalType}s near ${city}. Try a different location or professional type.`,
           variant: "destructive"
         });
+      } else {
+        toast({
+          title: "Search successful",
+          description: `Found ${results.length} ${professionalType}s near ${city}.`,
+        });
       }
     } catch (error) {
       console.error("Error searching for professionals:", error);
-      setError(error instanceof Error ? error.message : "There was an error searching for health professionals. Please try again later.");
-      toast({
-        title: "Search failed",
-        description: error instanceof Error ? error.message : "There was an error searching for health professionals. Please try again later.",
-        variant: "destructive"
-      });
+      
+      // Determine if it's a location not found error
+      const errorMsg = error instanceof Error ? error.message : "There was an error searching for health professionals. Please try again later.";
+      setError(errorMsg);
+      
+      // Show appropriate toast based on error type
+      if (errorMsg.includes("Location not found") || errorMsg.includes("couldn't find this location")) {
+        toast({
+          title: "Location not found",
+          description: "We couldn't find this city. Please check the spelling or try a more specific location.",
+          variant: "destructive"
+        });
+      } else if (errorMsg.includes("API key not configured")) {
+        toast({
+          title: "Configuration error",
+          description: "The Google Places API key is not configured. Please contact the site administrator.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Search failed",
+          description: errorMsg,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +128,7 @@ const FindProfessionals = () => {
               <div className="flex-1">
                 <Input
                   type="text"
-                  placeholder="Enter your city (e.g., Los Angeles)"
+                  placeholder="Enter your city (e.g., Seattle, New York)"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   disabled={isLoading}
@@ -207,9 +231,13 @@ const FindProfessionals = () => {
           )}
           
           {professionals.length === 0 && hasSearched && !isLoading && !error && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No professionals found for this location. Try a different city or professional type.</p>
-            </div>
+            <Alert className="mb-6">
+              <Info className="h-4 w-4" />
+              <AlertTitle>No professionals found</AlertTitle>
+              <AlertDescription>
+                We couldn't find any {professionalType}s near {city}. Try a different city name, professional type, or check your spelling.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </main>

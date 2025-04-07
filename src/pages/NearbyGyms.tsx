@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Star, ExternalLink, Phone, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Star, ExternalLink, Phone, AlertCircle, Loader2, Info } from "lucide-react";
 import { searchNearbyPlaces } from "@/utils/placesApi";
 import { PlaceResult } from "@/utils/types";
 import BackButton from "@/components/BackButton";
@@ -46,15 +46,39 @@ const NearbyGyms = () => {
           description: `We couldn't find any gyms near ${city}. Try a different location.`,
           variant: "destructive"
         });
+      } else {
+        toast({
+          title: "Search successful",
+          description: `Found ${results.length} gyms near ${city}.`,
+        });
       }
     } catch (error) {
       console.error("Error searching for gyms:", error);
-      setError(error instanceof Error ? error.message : "There was an error searching for gyms. Please try again later.");
-      toast({
-        title: "Search failed",
-        description: error instanceof Error ? error.message : "There was an error searching for gyms. Please try again later.",
-        variant: "destructive"
-      });
+      
+      // Determine if it's a location not found error
+      const errorMsg = error instanceof Error ? error.message : "There was an error searching for gyms. Please try again later.";
+      setError(errorMsg);
+      
+      // Show appropriate toast based on error type
+      if (errorMsg.includes("Location not found") || errorMsg.includes("couldn't find this location")) {
+        toast({
+          title: "Location not found",
+          description: "We couldn't find this city. Please check the spelling or try a more specific location.",
+          variant: "destructive"
+        });
+      } else if (errorMsg.includes("API key not configured")) {
+        toast({
+          title: "Configuration error",
+          description: "The Google Places API key is not configured. Please contact the site administrator.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Search failed",
+          description: errorMsg,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +108,7 @@ const NearbyGyms = () => {
               <div className="flex-1">
                 <Input
                   type="text"
-                  placeholder="Enter your city (e.g., San Francisco)"
+                  placeholder="Enter your city (e.g., Seattle, New York)"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   disabled={isLoading}
@@ -169,9 +193,13 @@ const NearbyGyms = () => {
           )}
           
           {gyms.length === 0 && hasSearched && !isLoading && !error && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No gyms found for this location. Try a different city.</p>
-            </div>
+            <Alert className="mb-6">
+              <Info className="h-4 w-4" />
+              <AlertTitle>No gyms found</AlertTitle>
+              <AlertDescription>
+                We couldn't find any gyms near {city}. Try a different city name or check your spelling.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </main>
