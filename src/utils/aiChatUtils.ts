@@ -69,6 +69,29 @@ export const generateResponse = async (
   try {
     console.log("Generating response for:", { message, firstName, language, mainGoal, isFirstInteraction });
     
+    // Check if we have message history to avoid repetitive responses
+    if (messageHistory && messageHistory.length > 2) {
+      const lastUserMessage = messageHistory.filter(msg => msg.role === "user").pop();
+      const lastAssistantMessage = messageHistory.filter(msg => msg.role === "assistant").pop();
+      
+      // If the user said "Yes" and the last assistant message was about a plan
+      if (message.toLowerCase() === "yes" || message.toLowerCase() === "sim" || message.toLowerCase() === "sí") {
+        if (lastAssistantMessage?.content.includes("plan") || 
+            lastAssistantMessage?.content.includes("plano") ||
+            lastAssistantMessage?.content.includes("específico")) {
+          
+          // Provide a more detailed plan instead of repeating the question
+          const weightLossPlan = {
+            pt: `Ótimo ${firstName}! Aqui está um plano básico para perda de peso:\n\n1. Cardio: 30 minutos de caminhada rápida ou corrida leve, 4-5x por semana\n2. Força: 2-3 sessões semanais com foco em exercícios compostos\n3. Nutrição: Aumente proteínas magras e vegetais, reduza carboidratos refinados\n4. Hidratação: 2-3 litros de água por dia\n\nVamos acompanhar seu progresso semanalmente. Como isso soa?`,
+            es: `¡Excelente ${firstName}! Aquí tienes un plan básico para perder peso:\n\n1. Cardio: 30 minutos de caminata rápida o trote ligero, 4-5 veces por semana\n2. Fuerza: 2-3 sesiones semanales con enfoque en ejercicios compuestos\n3. Nutrición: Aumenta proteínas magras y vegetales, reduce carbohidratos refinados\n4. Hidratación: 2-3 litros de agua al día\n\nHaremos seguimiento de tu progreso semanalmente. ¿Cómo suena esto?`,
+            en: `Great ${firstName}! Here's a basic weight loss plan:\n\n1. Cardio: 30 minutes of brisk walking or light jogging, 4-5x per week\n2. Strength: 2-3 weekly sessions focusing on compound exercises\n3. Nutrition: Increase lean proteins and vegetables, reduce refined carbs\n4. Hydration: 2-3 liters of water daily\n\nWe'll track your progress weekly. How does this sound?`
+          };
+          
+          return weightLossPlan[language];
+        }
+      }
+    }
+    
     // Dictionary of responses based on language
     const responses = {
       greeting: {
@@ -184,24 +207,33 @@ const generateContextAwareResponse = (
   messageHistory?: Message[]
 ): string | null => {
   // This function would contain more sophisticated logic to analyze conversation context
-  // For now, implementing a basic version
-  
   const lowerMessage = message.toLowerCase();
   
   // Check if this is related to previous messages
   if (messageHistory && messageHistory.length > 1) {
-    const previousUserMessage = messageHistory[messageHistory.length - 2];
-    const previousAssistantMessage = messageHistory[messageHistory.length - 1];
+    const lastTwoMessages = messageHistory.slice(-2);
     
-    // If previous message was about a topic and current one is asking for more details
-    if (previousAssistantMessage.content.includes("workout") && 
-        (lowerMessage.includes("what") || lowerMessage.includes("how") || lowerMessage.includes("tell"))) {
-      const responses = {
-        pt: `Claro ${firstName}! Aqui está mais informação sobre exercícios eficazes que você pode incluir na sua rotina.`,
-        es: `¡Claro ${firstName}! Aquí hay más información sobre ejercicios efectivos que puedes incluir en tu rutina.`,
-        en: `Sure ${firstName}! Here's more information about effective exercises you can include in your routine.`
-      };
-      return responses[language];
+    // Check for simple affirmative responses like "yes" to previous questions
+    if (lowerMessage === "yes" || lowerMessage === "sim" || lowerMessage === "sí") {
+      const previousAssistantMessage = messageHistory.filter(msg => msg.role === "assistant").pop();
+      
+      if (previousAssistantMessage) {
+        const prevContent = previousAssistantMessage.content.toLowerCase();
+        
+        // If previous message was about a workout or nutrition plan
+        if (prevContent.includes("plan") || prevContent.includes("plano") || 
+            prevContent.includes("workout") || prevContent.includes("treino") || 
+            prevContent.includes("diet") || prevContent.includes("dieta")) {
+            
+          const responses = {
+            pt: `Excelente, ${firstName}! Vou criar um plano personalizado baseado no seu perfil. Você prefere começar com exercícios mais leves ou está pronto para um desafio mais intenso?`,
+            es: `¡Excelente, ${firstName}! Crearé un plan personalizado basado en tu perfil. ¿Prefieres empezar con ejercicios más ligeros o estás listo para un desafío más intenso?`,
+            en: `Excellent, ${firstName}! I'll create a personalized plan based on your profile. Do you prefer to start with lighter exercises or are you ready for a more intense challenge?`
+          };
+          
+          return responses[language];
+        }
+      }
     }
   }
   

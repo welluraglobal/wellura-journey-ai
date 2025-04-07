@@ -10,21 +10,23 @@ schemas = ["public", "storage", "graphql_public"]
 port = 54322
 
 [studio]
+enabled = true
 port = 54323
+api_url = "http://127.0.0.1:54321"
 
 [inbucket]
+enabled = true
 port = 54324
 
 [auth]
 enabled = true
-port = 54325
-
-[realtime]
-enabled = true
+site_url = "http://127.0.0.1:5173"
 
 [storage]
 enabled = true
 
-[edge_functions]
-[edge_functions.health-lookup]
+[realtime]
+enabled = true
+
+[functions.health-lookup]
 verify_jwt = true
