@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
@@ -84,7 +85,7 @@ const Chat = () => {
       
       setMessages(prev => [...prev, {
         id: thinkingMsgId,
-        role: "assistant" as const,
+        role: "assistant",
         content: thinkingMessage,
         timestamp: new Date()
       }]);

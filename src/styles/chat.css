@@ -12,10 +12,12 @@
   background-color: #f0f9ff;
   margin-left: auto;
   border-bottom-right-radius: 0.25rem;
+  color: #1A1F2C;
 }
 
 .chat-bubble.assistant {
-  background-color: #f9fafb;
+  background-color: #1A1F2C;
+  color: #ffffff;
   margin-right: auto;
   border-bottom-left-radius: 0.25rem;
 }
@@ -23,6 +25,8 @@
 .chat-bubble.thinking {
   font-style: italic;
   opacity: 0.8;
+  background-color: #f9fafb;
+  color: #8E9196;
 }
 
 .animate-pulse-slow {

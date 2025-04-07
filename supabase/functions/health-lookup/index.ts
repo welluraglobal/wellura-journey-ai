@@ -35,19 +35,87 @@ Respond naturally like a real coach, adapting tone and vocabulary. If the user i
 Now respond to the following message: "${query}"
 `;
     
-    // For demo purposes, simulate a lookup with specific responses for common health topics
-    const response = await simulateHealthLookup(query, userProfile, prompt);
+    // Get the OpenAI API key from environment
+    const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
     
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        response
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+    if (!openAiApiKey) {
+      console.error("OpenAI API key is not set in environment variables");
+      // Fall back to simulated responses if OpenAI API key is not available
+      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          response: fallbackResponse
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+    
+    // Call OpenAI API for a dynamic response
+    try {
+      console.log("Calling OpenAI API...");
+      
+      const openAIResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiApiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+      
+      const openAIData = await openAIResponse.json();
+      
+      if (openAIData.error) {
+        console.error("OpenAI API error:", openAIData.error);
+        throw new Error(openAIData.error.message);
       }
-    );
+      
+      const aiResponse = openAIData.choices[0].message.content;
+      console.log("OpenAI response:", aiResponse.substring(0, 50) + "...");
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          response: aiResponse
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    } catch (openAIError) {
+      console.error("Error calling OpenAI:", openAIError);
+      
+      // Fall back to simulated responses if OpenAI call fails
+      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          response: fallbackResponse,
+          note: "Using fallback response due to OpenAI API issue"
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
   } catch (error) {
     console.error("Error in health-lookup function:", error);
     
