@@ -1,4 +1,3 @@
-
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -58,7 +57,6 @@ const Auth = () => {
           return;
         }
         
-        // Sign up with Supabase
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -66,7 +64,8 @@ const Auth = () => {
             data: {
               first_name: firstName,
               last_name: lastName,
-              user_type: 'user'
+              user_type: 'user',
+              updated_at: new Date().toISOString()
             }
           }
         });
@@ -81,7 +80,6 @@ const Auth = () => {
         });
         
       } else {
-        // Login with Supabase
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -92,12 +90,22 @@ const Auth = () => {
         }
       }
       
-      // Check session after login/signup
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setIsLoggedIn(true);
         localStorage.setItem("wellura-authenticated", "true");
-        navigate("/profile-setup");
+        
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile && profile.first_name) {
+          navigate("/dashboard");
+        } else {
+          navigate("/profile-setup");
+        }
       }
       
     } catch (error: any) {

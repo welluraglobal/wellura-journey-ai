@@ -14,14 +14,18 @@ import NotFound from "./pages/NotFound";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
 
-// Create a context to store and share user authentication state
+// Create a context to store and share user authentication state and profile data
 export const UserContext = createContext({
   isLoggedIn: false,
   hasProfile: false,
   firstName: "",
+  userId: "",
+  userProfile: null as any,
   setIsLoggedIn: (value: boolean) => {},
   setHasProfile: (value: boolean) => {},
   setFirstName: (value: string) => {},
+  setUserId: (value: string) => {},
+  setUserProfile: (value: any) => {},
 });
 
 const queryClient = new QueryClient();
@@ -30,11 +34,41 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [hasProfile, setHasProfile] = useState<boolean>(false);
   const [firstName, setFirstName] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Check authentication status on app load with Supabase
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        // Check for existing session first
+        const { data: { session } } = await supabase.auth.getSession();
+        const isAuthenticated = !!session;
+        
+        if (isAuthenticated && session?.user?.id) {
+          setIsLoggedIn(true);
+          setUserId(session.user.id);
+          
+          // Fetch complete profile data
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profile) {
+            // Save all profile data to context
+            setUserProfile(profile);
+            
+            if (profile.first_name) {
+              setFirstName(profile.first_name);
+              setHasProfile(true);
+              localStorage.setItem("wellura-has-profile", "true");
+              localStorage.setItem("wellura-first-name", profile.first_name);
+            }
+          }
+        }
+        
         // Set up auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
@@ -43,19 +77,27 @@ const App = () => {
             
             // If user is authenticated, fetch profile information
             if (isAuthenticated && session?.user?.id) {
+              setUserId(session.user.id);
+              
+              // Use setTimeout to prevent Supabase auth deadlocks
               setTimeout(async () => {
                 try {
                   const { data: profile, error } = await supabase
                     .from('profiles')
-                    .select('first_name')
+                    .select('*')
                     .eq('id', session.user.id)
                     .single();
                     
-                  if (profile && profile.first_name) {
-                    setFirstName(profile.first_name);
-                    setHasProfile(true);
-                    localStorage.setItem("wellura-has-profile", "true");
-                    localStorage.setItem("wellura-first-name", profile.first_name);
+                  if (profile) {
+                    // Save complete profile to context
+                    setUserProfile(profile);
+                    
+                    if (profile.first_name) {
+                      setFirstName(profile.first_name);
+                      setHasProfile(true);
+                      localStorage.setItem("wellura-has-profile", "true");
+                      localStorage.setItem("wellura-first-name", profile.first_name);
+                    }
                   }
                 } catch (profileError) {
                   console.error("Error fetching profile:", profileError);
@@ -66,33 +108,14 @@ const App = () => {
             if (!isAuthenticated) {
               setHasProfile(false);
               setFirstName("");
+              setUserId("");
+              setUserProfile(null);
               localStorage.removeItem("wellura-authenticated");
               localStorage.removeItem("wellura-has-profile");
               localStorage.removeItem("wellura-first-name");
             }
           }
         );
-        
-        // Check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        const isAuthenticated = !!session;
-        setIsLoggedIn(isAuthenticated);
-        
-        // If user is authenticated, fetch profile information
-        if (isAuthenticated && session?.user?.id) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('first_name')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profile && profile.first_name) {
-            setFirstName(profile.first_name);
-            setHasProfile(true);
-            localStorage.setItem("wellura-has-profile", "true");
-            localStorage.setItem("wellura-first-name", profile.first_name);
-          }
-        }
         
         return () => {
           subscription.unsubscribe();
@@ -112,9 +135,13 @@ const App = () => {
           isLoggedIn, 
           hasProfile, 
           firstName,
+          userId,
+          userProfile,
           setIsLoggedIn, 
           setHasProfile,
-          setFirstName
+          setFirstName,
+          setUserId,
+          setUserProfile
         }}
       >
         <TooltipProvider>

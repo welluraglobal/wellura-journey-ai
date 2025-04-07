@@ -42,11 +42,30 @@ const ProfileSetup = () => {
       const { data } = await supabase.auth.getUser();
       if (data && data.user) {
         setUserId(data.user.id);
+        
+        // Check if user already has a profile
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profile && !error) {
+          // If profile exists and has data, navigate to dashboard
+          if (profile.first_name) {
+            setHasProfile(true);
+            setFirstName(profile.first_name);
+            localStorage.setItem("wellura-has-profile", "true");
+            localStorage.setItem("wellura-first-name", profile.first_name);
+            navigate("/dashboard");
+            return;
+          }
+        }
       }
     };
     
     fetchUserId();
-  }, []);
+  }, [navigate, setHasProfile, setFirstName]);
   
   const updateField = (field: keyof ProfileData, value: string) => {
     setProfileData((prev) => ({
@@ -98,14 +117,17 @@ const ProfileSetup = () => {
       const firstName = profileData.fullName.split(" ")[0];
       const lastName = profileData.fullName.split(" ").slice(1).join(" ");
       
-      // Save to Supabase profiles table
+      // Save to Supabase profiles table with ALL profile fields
       const { error } = await supabase
         .from('profiles')
         .update({
           first_name: firstName,
           last_name: lastName,
           main_goal: profileData.goal,
-          // Add other profile fields
+          age: parseInt(profileData.age),
+          gender: profileData.gender,
+          height: parseFloat(profileData.height),
+          weight: parseFloat(profileData.weight),
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);

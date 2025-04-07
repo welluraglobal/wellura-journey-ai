@@ -1,31 +1,22 @@
-
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { detectLanguage, fetchUserProfile, generateResponse, getContextualEmoji } from "@/utils/aiChatUtils";
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-};
+import { Message, detectLanguage, fetchUserProfile, generateResponse, getContextualEmoji } from "@/utils/aiChatUtils";
 
 const Chat = () => {
-  const { firstName, isLoggedIn } = useContext(UserContext);
+  const { firstName, userId, userProfile } = useContext(UserContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isFirstInteraction, setIsFirstInteraction] = useState(true);
   const [userLanguage, setUserLanguage] = useState<"pt" | "es" | "en">("en");
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [localUserProfile, setLocalUserProfile] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -44,29 +35,39 @@ const Chat = () => {
     const hadPreviousInteraction = localStorage.getItem("wellura-had-chat");
     setIsFirstInteraction(!hadPreviousInteraction);
     
-    // Fetch user profile data if logged in
-    const fetchProfile = async () => {
-      if (isLoggedIn) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const profile = await fetchUserProfile(user.id);
-          setUserProfile(profile);
-          
-          // Try to detect user's preferred language from browser
-          const browserLang = navigator.language.toLowerCase();
-          if (browserLang.startsWith('pt')) {
-            setUserLanguage('pt');
-          } else if (browserLang.startsWith('es')) {
-            setUserLanguage('es');
-          } else {
-            setUserLanguage('en');
-          }
-        }
+    // Use the profile data from context if available, otherwise fetch it
+    if (userProfile) {
+      setLocalUserProfile(userProfile);
+      
+      // Try to detect user's preferred language from browser
+      const browserLang = navigator.language.toLowerCase();
+      if (browserLang.startsWith('pt')) {
+        setUserLanguage('pt');
+      } else if (browserLang.startsWith('es')) {
+        setUserLanguage('es');
+      } else {
+        setUserLanguage('en');
       }
-    };
-    
-    fetchProfile();
-  }, [isLoggedIn]);
+    } else if (userId) {
+      // Fallback to fetching profile data if not in context
+      const fetchProfile = async () => {
+        const profile = await fetchUserProfile(userId);
+        setLocalUserProfile(profile);
+        
+        // Try to detect user's preferred language from browser
+        const browserLang = navigator.language.toLowerCase();
+        if (browserLang.startsWith('pt')) {
+          setUserLanguage('pt');
+        } else if (browserLang.startsWith('es')) {
+          setUserLanguage('es');
+        } else {
+          setUserLanguage('en');
+        }
+      };
+      
+      fetchProfile();
+    }
+  }, [userId, userProfile]);
   
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -95,12 +96,12 @@ const Chat = () => {
       // Simulate network delay (can be removed in production)
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Generate personalized response based on context
+      // Generate personalized response based on context and complete profile
       const responseContent = await generateResponse(
         newMessage, 
-        firstName || userProfile?.first_name || "",
+        firstName || localUserProfile?.first_name || "",
         detectedLanguage,
-        userProfile?.main_goal,
+        localUserProfile?.main_goal,
         messages,
         isFirstInteraction
       );
@@ -137,9 +138,10 @@ const Chat = () => {
     }
   };
 
-  // Suggest questions based on user's language
+  // Suggest questions based on user's language and profile goals
   const getSuggestedQuestions = () => {
-    const questions = {
+    // Base questions
+    const baseQuestions = {
       en: [
         "How can I improve my sleep quality?",
         "What foods support my fitness goals?",
@@ -160,7 +162,46 @@ const Chat = () => {
       ]
     };
     
-    return questions[userLanguage];
+    // If we have user's main goal, add a goal-specific question
+    if (localUserProfile?.main_goal) {
+      const goalQuestions = {
+        en: {
+          lose_weight: "What's the best exercise for weight loss?",
+          gain_muscle: "How can I maximize my muscle gain?",
+          improve_fitness: "How can I increase my stamina?",
+          increase_energy: "What foods give me more energy?",
+          improve_sleep: "How can I fall asleep faster?",
+          reduce_stress: "What are the best stress-reduction techniques?",
+          improve_overall: "How can I create a balanced wellness routine?"
+        },
+        pt: {
+          lose_weight: "Qual é o melhor exercício para perda de peso?",
+          gain_muscle: "Como posso maximizar meu ganho muscular?",
+          improve_fitness: "Como posso aumentar minha resistência?",
+          increase_energy: "Quais alimentos me dão mais energia?",
+          improve_sleep: "Como posso adormecer mais rápido?",
+          reduce_stress: "Quais são as melhores técnicas de redução de estresse?",
+          improve_overall: "Como posso criar uma rotina de bem-estar equilibrada?"
+        },
+        es: {
+          lose_weight: "¿Cuál es el mejor ejercicio para perder peso?",
+          gain_muscle: "¿Cómo puedo maximizar mi ganancia muscular?",
+          improve_fitness: "¿Cómo puedo aumentar mi resistencia?",
+          increase_energy: "¿Qué alimentos me dan más energía?",
+          improve_sleep: "¿Cómo puedo dormirme más rápido?",
+          reduce_stress: "¿Cuáles son las mejores técnicas para reducir el estrés?",
+          improve_overall: "¿Cómo puedo crear una rutina de bienestar equilibrada?"
+        }
+      };
+      
+      // Add the goal-specific question if it exists
+      const goal = localUserProfile.main_goal;
+      if (goalQuestions[userLanguage][goal]) {
+        baseQuestions[userLanguage].unshift(goalQuestions[userLanguage][goal]);
+      }
+    }
+    
+    return baseQuestions[userLanguage];
   };
 
   return (
