@@ -61,9 +61,9 @@ const Chat = () => {
       
       if (isFirstInteraction) {
         if (isPortuguese) {
-          responseContent = `Olá, ${firstName || "amigo"}! 😊 Bem-vindo ao Wellura Brasil. Sou seu consultor de bem-estar e estou aqui para te ajudar a alcançar seus objetivos de saúde. Como posso te ajudar hoje?`;
+          responseContent = `Olá, ${firstName || "amigo"}! 😊 Bem-vindo ao Wellura App. Sou seu consultor de bem-estar e estou aqui para te ajudar a alcançar seus objetivos de saúde. Como posso te ajudar hoje?`;
         } else {
-          responseContent = `Hello, ${firstName || "friend"}! 😊 Welcome to Wellura Brasil. I'm your wellness consultant and I'm here to help you achieve your health goals. How can I assist you today?`;
+          responseContent = `Hello, ${firstName || "friend"}! 😊 Welcome to Wellura App. I'm your wellness consultant and I'm here to help you achieve your health goals. How can I assist you today?`;
         }
         
         localStorage.setItem("wellura-had-chat", "true");
