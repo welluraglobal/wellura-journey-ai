@@ -20,6 +20,11 @@
   border-bottom-left-radius: 0.25rem;
 }
 
+.chat-bubble.thinking {
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .animate-pulse-slow {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

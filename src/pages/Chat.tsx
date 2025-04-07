@@ -7,6 +7,7 @@ import { Send, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Message, detectLanguage, fetchUserProfile, generateResponse, getContextualEmoji } from "@/utils/aiChatUtils";
+import "../styles/chat.css";
 
 const Chat = () => {
   const { firstName, userId, userProfile } = useContext(UserContext);
@@ -17,6 +18,7 @@ const Chat = () => {
   const [isFirstInteraction, setIsFirstInteraction] = useState(true);
   const [userLanguage, setUserLanguage] = useState<"pt" | "es" | "en">("en");
   const [localUserProfile, setLocalUserProfile] = useState<any>(null);
+  const [isThinking, setIsThinking] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -37,6 +39,7 @@ const Chat = () => {
     
     // Use the profile data from context if available, otherwise fetch it
     if (userProfile) {
+      console.log("Using user profile from context:", userProfile);
       setLocalUserProfile(userProfile);
       
       // Try to detect user's preferred language from browser
@@ -52,6 +55,7 @@ const Chat = () => {
       // Fallback to fetching profile data if not in context
       const fetchProfile = async () => {
         const profile = await fetchUserProfile(userId);
+        console.log("Fetched user profile:", profile);
         setLocalUserProfile(profile);
         
         // Try to detect user's preferred language from browser
@@ -68,6 +72,57 @@ const Chat = () => {
       fetchProfile();
     }
   }, [userId, userProfile]);
+
+  // Function to lookup health information from the internet
+  const lookupHealthInformation = async (query: string) => {
+    try {
+      setIsThinking(true);
+      
+      // Add thinking message
+      const thinkingMessage = getThinkingMessage(userLanguage);
+      const thinkingMsgId = `thinking-${Date.now()}`;
+      
+      setMessages(prev => [...prev, {
+        id: thinkingMsgId,
+        role: "assistant",
+        content: thinkingMessage,
+        timestamp: new Date()
+      }]);
+      
+      // Call the Supabase Edge Function to get health information
+      const { data, error } = await supabase.functions.invoke('health-lookup', {
+        body: { 
+          query, 
+          userProfile: localUserProfile 
+        }
+      });
+      
+      // Remove thinking message
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingMsgId));
+      
+      if (error) {
+        console.error("Error calling health-lookup function:", error);
+        return null;
+      }
+      
+      return data.response;
+    } catch (error) {
+      console.error("Error in lookupHealthInformation:", error);
+      return null;
+    } finally {
+      setIsThinking(false);
+    }
+  };
+  
+  const getThinkingMessage = (language: "pt" | "es" | "en"): string => {
+    const messages = {
+      pt: "Deixe-me pesquisar isso para você...",
+      es: "Déjame buscar eso para ti...",
+      en: "Give me a second to look that up for you..."
+    };
+    
+    return messages[language];
+  };
   
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -93,18 +148,36 @@ const Chat = () => {
       const detectedLanguage = detectLanguage(newMessage);
       setUserLanguage(detectedLanguage);
       
-      // Simulate network delay (can be removed in production)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if we should try to get internet data
+      let internetResponse = null;
+      const needsInternetLookup = 
+        newMessage.toLowerCase().includes("supplement") || 
+        newMessage.toLowerCase().includes("diet") ||
+        newMessage.toLowerCase().includes("nutrition") ||
+        newMessage.toLowerCase().includes("workout") ||
+        newMessage.toLowerCase().includes("exercise") ||
+        newMessage.toLowerCase().includes("sleep") ||
+        newMessage.toLowerCase().includes("stress");
       
-      // Generate personalized response based on context and complete profile
-      const responseContent = await generateResponse(
-        newMessage, 
-        firstName || localUserProfile?.first_name || "",
-        detectedLanguage,
-        localUserProfile?.main_goal,
-        messages,
-        isFirstInteraction
-      );
+      if (needsInternetLookup) {
+        internetResponse = await lookupHealthInformation(newMessage);
+      }
+      
+      // If we got a response from the internet lookup, use it
+      let responseContent = "";
+      if (internetResponse) {
+        responseContent = internetResponse;
+      } else {
+        // Otherwise, use our local response generation
+        responseContent = await generateResponse(
+          newMessage, 
+          firstName || localUserProfile?.first_name || "",
+          detectedLanguage,
+          localUserProfile?.main_goal,
+          messages,
+          isFirstInteraction
+        );
+      }
       
       // Create assistant message with contextualized emoji
       const assistantMessage: Message = {
@@ -245,7 +318,7 @@ const Chat = () => {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`chat-bubble ${message.role === "user" ? "user" : "assistant"}`}
+                    className={`chat-bubble ${message.role === "user" ? "user" : "assistant"} ${message.id.startsWith('thinking-') ? 'thinking' : ''}`}
                   >
                     <div className="mb-1 text-xs opacity-70">
                       {message.role === "user" ? "You" : "AI Consultant"}
@@ -253,7 +326,7 @@ const Chat = () => {
                     <div>{message.content}</div>
                   </div>
                 ))}
-                {isLoading && (
+                {isLoading && !isThinking && (
                   <div className="chat-bubble assistant animate-pulse-slow">
                     <div className="mb-1 text-xs opacity-70">AI Consultant</div>
                     <div>Thinking...</div>
