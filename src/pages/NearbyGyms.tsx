@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Star, ExternalLink, Phone } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Star, ExternalLink, Phone, AlertCircle, Loader2 } from "lucide-react";
 import { searchNearbyPlaces } from "@/utils/placesApi";
 import { PlaceResult } from "@/utils/types";
 import BackButton from "@/components/BackButton";
@@ -15,6 +16,8 @@ const NearbyGyms = () => {
   const [city, setCity] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [gyms, setGyms] = useState<PlaceResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -30,6 +33,9 @@ const NearbyGyms = () => {
     }
 
     setIsLoading(true);
+    setError(null);
+    setHasSearched(true);
+    
     try {
       const results = await searchNearbyPlaces(city, "gym");
       setGyms(results);
@@ -43,9 +49,10 @@ const NearbyGyms = () => {
       }
     } catch (error) {
       console.error("Error searching for gyms:", error);
+      setError(error instanceof Error ? error.message : "There was an error searching for gyms. Please try again later.");
       toast({
         title: "Search failed",
-        description: "There was an error searching for gyms. Please try again later.",
+        description: error instanceof Error ? error.message : "There was an error searching for gyms. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -85,10 +92,25 @@ const NearbyGyms = () => {
                 />
               </div>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Searching..." : "Find Gyms"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : "Find Gyms"}
               </Button>
             </div>
           </form>
+          
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
           
           {gyms.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -146,7 +168,7 @@ const NearbyGyms = () => {
             </div>
           )}
           
-          {gyms.length === 0 && !isLoading && city && (
+          {gyms.length === 0 && hasSearched && !isLoading && !error && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No gyms found for this location. Try a different city.</p>
             </div>

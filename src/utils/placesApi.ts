@@ -21,10 +21,27 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
     
     if (error) {
       console.error("Error from Places API:", error);
+      
+      // Check if it's a configuration error
+      if (error.message?.includes("API key not configured")) {
+        throw new Error("Google Places API key not configured. Please contact the site administrator.");
+      }
+      
       throw new Error(error.message || "Failed to search for places");
     }
     
-    if (!data || !Array.isArray(data.results)) {
+    if (!data) {
+      console.warn("No data returned from Places API");
+      return [];
+    }
+    
+    if (data.error) {
+      console.error("Error in Places API response:", data.error, data.message);
+      throw new Error(data.message || data.error || "Error from Places API");
+    }
+    
+    if (!Array.isArray(data.results)) {
+      console.warn("Invalid results format from Places API:", data);
       return [];
     }
     
