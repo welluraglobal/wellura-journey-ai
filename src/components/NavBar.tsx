@@ -53,10 +53,10 @@ const NavBar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="py-4 px-6 border-b flex items-center justify-between bg-background">
+    <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
       <div className="flex items-center">
-        <Link to="/dashboard" className="text-xl font-bold text-wellura-500 mr-2">
-          Wellura Brasil
+        <Link to="/dashboard" className="text-xl font-bold text-white mr-2">
+          Wellura App
         </Link>
         
         {/* Desktop Navigation */}
@@ -67,8 +67,8 @@ const NavBar = () => {
               to={item.path}
               className={`flex items-center space-x-1 ${
                 isActive(item.path)
-                  ? "text-wellura-500 font-medium"
-                  : "text-muted-foreground hover:text-foreground transition-colors"
+                  ? "text-white font-medium"
+                  : "text-white/80 hover:text-white transition-colors"
               }`}
             >
               <item.icon size={18} />
@@ -82,7 +82,7 @@ const NavBar = () => {
         {/* User dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="hidden md:flex">
+            <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
               <User className="h-4 w-4 mr-2" />
               {firstName || "User"}
             </Button>
@@ -106,7 +106,7 @@ const NavBar = () => {
         {/* Mobile Menu Button */}
         <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button variant="ghost" size="icon" className="md:hidden text-white">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -118,7 +118,7 @@ const NavBar = () => {
                   to={item.path}
                   className={`flex items-center space-x-2 py-2 ${
                     isActive(item.path)
-                      ? "text-wellura-500 font-medium"
+                      ? "text-wellura-400 font-medium"
                       : "text-muted-foreground"
                   }`}
                   onClick={() => setIsMenuOpen(false)}

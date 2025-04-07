@@ -24,22 +24,22 @@ const Dashboard = () => {
       <main className="flex-1 p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Welcome Section */}
-          <section className="bg-wellura-50 rounded-xl p-8 border border-wellura-200">
+          <section className="bg-gradient-wellura text-white rounded-xl p-8 border border-wellura-300/30">
             <h1 className="text-3xl font-bold mb-4">
-              Welcome back, <span className="text-wellura-500">{firstName || "Friend"}!</span>
+              Welcome back, <span className="text-white">{firstName || "Friend"}!</span>
             </h1>
-            <p className="text-muted-foreground mb-6 max-w-2xl">
+            <p className="text-white/90 mb-6 max-w-2xl">
               Your wellness journey is our priority. Track your progress, chat with your AI consultant, 
               and manage your personalized plans all in one place.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button asChild>
+              <Button asChild className="bg-white/20 hover:bg-white/30 backdrop-blur-sm">
                 <Link to="/chat">
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Talk to Your AI Consultant
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" asChild className="border-white/30 bg-white/10 hover:bg-white/20 text-white">
                 <Link to="/plan-generator">
                   <LineChart className="mr-2 h-4 w-4" />
                   Generate Your Plans
@@ -55,7 +55,7 @@ const Dashboard = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center">
-                    <Utensils className="mr-2 h-5 w-5 text-wellura-500" />
+                    <Utensils className="mr-2 h-5 w-5 text-wellura-400" />
                     Meal Plan
                   </CardTitle>
                 </CardHeader>
@@ -78,7 +78,7 @@ const Dashboard = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center">
-                    <Dumbbell className="mr-2 h-5 w-5 text-wellura-500" />
+                    <Dumbbell className="mr-2 h-5 w-5 text-wellura-400" />
                     Training Plan
                   </CardTitle>
                 </CardHeader>
@@ -101,7 +101,7 @@ const Dashboard = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center">
-                    <MessageCircle className="mr-2 h-5 w-5 text-wellura-500" />
+                    <MessageCircle className="mr-2 h-5 w-5 text-wellura-400" />
                     AI Consultant
                   </CardTitle>
                 </CardHeader>
