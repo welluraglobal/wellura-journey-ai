@@ -1,5 +1,5 @@
 
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import NavBar from "@/components/NavBar";
+import { supabase } from "@/integrations/supabase/client";
 
 type ProfileData = {
   fullName: string;
@@ -30,9 +31,22 @@ const ProfileSetup = () => {
     goal: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   
   const { setHasProfile, setFirstName } = useContext(UserContext);
   const navigate = useNavigate();
+
+  // Get the current user ID when the component mounts
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data && data.user) {
+        setUserId(data.user.id);
+      }
+    };
+    
+    fetchUserId();
+  }, []);
   
   const updateField = (field: keyof ProfileData, value: string) => {
     setProfileData((prev) => ({
@@ -73,29 +87,46 @@ const ProfileSetup = () => {
         setIsLoading(false);
         return;
       }
-      
-      // Placeholder for Supabase profile storage
-      // This will be replaced with actual Supabase database calls once integrated
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        setIsLoading(false);
+        return;
+      }
       
       // Extract first name from full name for greeting
       const firstName = profileData.fullName.split(" ")[0];
+      const lastName = profileData.fullName.split(" ").slice(1).join(" ");
+      
+      // Save to Supabase profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          main_goal: profileData.goal,
+          // Add other profile fields
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+      
+      if (error) {
+        throw error;
+      }
       
       // Set profile completion state and store first name for personalization
       setHasProfile(true);
       setFirstName(firstName);
       
-      // Store in localStorage for demo purposes (will be replaced with Supabase)
+      // Store in localStorage for persistence between sessions
       localStorage.setItem("wellura-has-profile", "true");
       localStorage.setItem("wellura-first-name", firstName);
       
       toast.success("Profile setup complete!");
       navigate("/dashboard");
       
-    } catch (error) {
-      toast.error("Failed to save profile. Please try again.");
+    } catch (error: any) {
+      toast.error("Failed to save profile: " + (error.message || "Unknown error"));
       console.error("Profile save error:", error);
     } finally {
       setIsLoading(false);

@@ -12,6 +12,7 @@ import PlanGenerator from "./pages/PlanGenerator";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect, createContext } from "react";
+import { supabase } from "./integrations/supabase/client";
 
 // Create a context to store and share user authentication state
 export const UserContext = createContext({
@@ -30,21 +31,75 @@ const App = () => {
   const [hasProfile, setHasProfile] = useState<boolean>(false);
   const [firstName, setFirstName] = useState<string>("");
   
-  // Check authentication status on app load (could be expanded with Supabase auth)
+  // Check authentication status on app load with Supabase
   useEffect(() => {
-    // When Supabase is integrated, we'll check auth status here
     const checkAuthStatus = async () => {
-      // Placeholder for actual Supabase auth check
-      const isAuthenticated = localStorage.getItem("wellura-authenticated") === "true";
-      setIsLoggedIn(isAuthenticated);
-      
-      // Check if user has completed profile setup
-      const hasCompletedProfile = localStorage.getItem("wellura-has-profile") === "true";
-      setHasProfile(hasCompletedProfile);
-      
-      // Get user's first name if available
-      const storedFirstName = localStorage.getItem("wellura-first-name") || "";
-      setFirstName(storedFirstName);
+      try {
+        // Set up auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            const isAuthenticated = !!session;
+            setIsLoggedIn(isAuthenticated);
+            
+            // If user is authenticated, fetch profile information
+            if (isAuthenticated && session?.user?.id) {
+              setTimeout(async () => {
+                try {
+                  const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('first_name')
+                    .eq('id', session.user.id)
+                    .single();
+                    
+                  if (profile && profile.first_name) {
+                    setFirstName(profile.first_name);
+                    setHasProfile(true);
+                    localStorage.setItem("wellura-has-profile", "true");
+                    localStorage.setItem("wellura-first-name", profile.first_name);
+                  }
+                } catch (profileError) {
+                  console.error("Error fetching profile:", profileError);
+                }
+              }, 0);
+            }
+            
+            if (!isAuthenticated) {
+              setHasProfile(false);
+              setFirstName("");
+              localStorage.removeItem("wellura-authenticated");
+              localStorage.removeItem("wellura-has-profile");
+              localStorage.removeItem("wellura-first-name");
+            }
+          }
+        );
+        
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        const isAuthenticated = !!session;
+        setIsLoggedIn(isAuthenticated);
+        
+        // If user is authenticated, fetch profile information
+        if (isAuthenticated && session?.user?.id) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('first_name')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profile && profile.first_name) {
+            setFirstName(profile.first_name);
+            setHasProfile(true);
+            localStorage.setItem("wellura-has-profile", "true");
+            localStorage.setItem("wellura-first-name", profile.first_name);
+          }
+        }
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Auth check error:", error);
+      }
     };
     
     checkAuthStatus();

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const location = useLocation();
@@ -19,6 +20,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
   const { setIsLoggedIn } = useContext(UserContext);
@@ -40,39 +43,70 @@ const Auth = () => {
           title: "Error",
           description: "Please fill in all required fields"
         });
+        setIsLoading(false);
         return;
       }
-      
-      if (mode === "signup" && password !== confirmedPassword) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Passwords do not match"
-        });
-        return;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (mode === "signup") {
+        if (password !== confirmedPassword) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Passwords do not match"
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Sign up with Supabase
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              user_type: 'user'
+            }
+          }
+        });
+        
+        if (error) {
+          throw error;
+        }
+        
         toast({
           title: "Success",
-          description: "Account created successfully!"
+          description: "Account created successfully! Please check your email to confirm your account."
         });
+        
+      } else {
+        // Login with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          throw error;
+        }
       }
       
-      setIsLoggedIn(true);
-      localStorage.setItem("wellura-authenticated", "true");
+      // Check session after login/signup
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsLoggedIn(true);
+        localStorage.setItem("wellura-authenticated", "true");
+        navigate("/profile-setup");
+      }
       
-      navigate("/profile-setup");
-      
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: "Authentication failed. Please try again."
+        description: error.message || "Authentication failed. Please try again."
       });
-      console.error("Auth error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -111,6 +145,31 @@ const Auth = () => {
             
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
+                {mode === "signup" && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
