@@ -84,7 +84,7 @@ const Chat = () => {
       
       setMessages(prev => [...prev, {
         id: thinkingMsgId,
-        role: "assistant",
+        role: "assistant" as const,
         content: thinkingMessage,
         timestamp: new Date()
       }]);
@@ -203,7 +203,7 @@ const Chat = () => {
       toast.error("Failed to get a response. Please try again.");
       
       // Add a fallback message in case of error
-      const fallbackMessage = {
+      const fallbackMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         role: "assistant",
         content: userLanguage === "pt" ? 
