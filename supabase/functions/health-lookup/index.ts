@@ -15,12 +15,26 @@ serve(async (req) => {
 
   try {
     // Parse the request body
-    const { query, userProfile } = await req.json();
+    const { query, userProfile, messageHistory } = await req.json();
     
-    console.log("Health lookup request:", { query, userProfile: userProfile ? "provided" : "not provided" });
+    console.log("Health lookup request:", { 
+      query, 
+      userProfile: userProfile ? "provided" : "not provided",
+      messageHistory: messageHistory ? `${messageHistory.length} messages` : "not provided" 
+    });
     
     // Create a structured prompt for the coach
     const userProfileData = userProfile || {};
+    
+    // Build a context-aware prompt that includes conversation history
+    let conversationContext = "";
+    if (messageHistory && messageHistory.length > 0) {
+      // Include up to the last 5 messages for context
+      const recentMessages = messageHistory.slice(-5);
+      conversationContext = "Previous conversation:\n" + 
+        recentMessages.map(msg => `${msg.role === 'user' ? 'User' : 'Coach'}: ${msg.content}`).join("\n") + "\n\n";
+    }
+    
     const prompt = `
 You are a friendly, humanized wellness coach working for Wellura App. Speak with empathy and motivation. Use the user's profile data:
 
@@ -30,7 +44,15 @@ Height: ${userProfileData.height || ""}m
 Weight: ${userProfileData.weight || ""}kg
 Goal: ${userProfileData.main_goal || ""}
 
-Respond naturally like a real coach, adapting tone and vocabulary. If the user is from Brazil, speak in Portuguese. Avoid robotic answers. Only greet them once per session.
+${conversationContext}
+Important guidelines:
+1. Respond naturally like a real coach, adapting tone and vocabulary. 
+2. If the user is from Brazil, speak in Portuguese. For Spanish-speaking regions, use Spanish.
+3. Avoid robotic or formulaic answers. Vary your responses based on the conversation.
+4. Only greet them once per session.
+5. Never repeat the same response.
+6. Be concise but warm and helpful.
+7. Don't ask for profile information that you already have.
 
 Now respond to the following message: "${query}"
 `;
@@ -41,7 +63,7 @@ Now respond to the following message: "${query}"
     if (!openAiApiKey) {
       console.error("OpenAI API key is not set in environment variables");
       // Fall back to simulated responses if OpenAI API key is not available
-      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt);
+      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt, messageHistory);
       
       return new Response(
         JSON.stringify({ 
@@ -73,7 +95,7 @@ Now respond to the following message: "${query}"
               content: prompt
             }
           ],
-          temperature: 0.7,
+          temperature: 0.8, // Slightly increased to ensure variety in responses
           max_tokens: 500
         })
       });
@@ -102,7 +124,7 @@ Now respond to the following message: "${query}"
       console.error("Error calling OpenAI:", openAIError);
       
       // Fall back to simulated responses if OpenAI call fails
-      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt);
+      const fallbackResponse = await simulateHealthLookup(query, userProfile, prompt, messageHistory);
       
       return new Response(
         JSON.stringify({ 
@@ -133,7 +155,19 @@ Now respond to the following message: "${query}"
 });
 
 // Helper function to simulate health information lookup
-async function simulateHealthLookup(query: string, userProfile: any, prompt: string): Promise<string> {
+async function simulateHealthLookup(query: string, userProfile: any, prompt: string, messageHistory?: any[]): Promise<string> {
+  // Check for repetitive response patterns
+  if (messageHistory && messageHistory.length > 0) {
+    const lastAssistantMessage = messageHistory.filter(msg => msg.role === "assistant").pop();
+    
+    // If the last message was about weight loss, vary the response
+    if (lastAssistantMessage && lastAssistantMessage.content.toLowerCase().includes("weight loss")) {
+      return `Looking at your profile data and our conversation so far, I'd recommend focusing on building sustainable habits rather than quick fixes. Small, consistent changes tend to yield better long-term results than drastic measures.
+      
+      What specific aspect of your wellness journey would you like more guidance on today?`;
+    }
+  }
+
   // Convert query to lowercase for easier matching
   const lowerQuery = query.toLowerCase();
   

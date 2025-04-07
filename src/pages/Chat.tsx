@@ -91,10 +91,12 @@ const Chat = () => {
       }]);
       
       // Call the Supabase Edge Function to get health information
+      // Pass message history for context
       const { data, error } = await supabase.functions.invoke('health-lookup', {
         body: { 
           query, 
-          userProfile: localUserProfile 
+          userProfile: localUserProfile,
+          messageHistory: messages
         }
       });
       
@@ -149,44 +151,18 @@ const Chat = () => {
       const detectedLanguage = detectLanguage(newMessage);
       setUserLanguage(detectedLanguage);
       
-      // Check if we should try to get internet data
-      let internetResponse = null;
-      const needsInternetLookup = 
-        newMessage.toLowerCase().includes("supplement") || 
-        newMessage.toLowerCase().includes("diet") ||
-        newMessage.toLowerCase().includes("nutrition") ||
-        newMessage.toLowerCase().includes("workout") ||
-        newMessage.toLowerCase().includes("exercise") ||
-        newMessage.toLowerCase().includes("sleep") ||
-        newMessage.toLowerCase().includes("stress");
+      // We'll use the API for all responses to ensure consistency
+      const internetResponse = await lookupHealthInformation(newMessage);
       
-      if (needsInternetLookup) {
-        internetResponse = await lookupHealthInformation(newMessage);
-      }
-      
-      // If we got a response from the internet lookup, use it
-      let responseContent = "";
-      if (internetResponse) {
-        responseContent = internetResponse;
-        console.log("Using internet response:", responseContent.substring(0, 50) + "...");
-      } else {
-        // Otherwise, use our local response generation
-        responseContent = await generateResponse(
-          newMessage, 
-          firstName || localUserProfile?.first_name || "",
-          detectedLanguage,
-          localUserProfile?.main_goal,
-          messages,
-          isFirstInteraction
-        );
-        console.log("Using generated response:", responseContent.substring(0, 50) + "...");
+      if (!internetResponse) {
+        throw new Error("Failed to get response from health lookup");
       }
       
       // Create assistant message
       const assistantMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         role: "assistant",
-        content: responseContent,
+        content: internetResponse,
         timestamp: new Date(),
       };
       
