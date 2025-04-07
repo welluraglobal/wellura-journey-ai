@@ -30,13 +30,23 @@ const Chat = () => {
   
   // Initialize conversation and check for previous interaction
   useEffect(() => {
-    // Generate a stable conversation ID based on user ID or session
-    const newConversationId = `wellura-conv-${Date.now()}`;
+    // Create a stable conversation ID based on user ID or session
+    const newConversationId = userId ? `wellura-conv-${userId}` : `wellura-conv-${Date.now()}`;
     setConversationId(newConversationId);
     
-    // Check if user had previous chat interactions
-    const hadPreviousInteraction = localStorage.getItem("wellura-had-chat");
-    setIsFirstInteraction(!hadPreviousInteraction);
+    // Check for previous messages in localStorage based on conversationId
+    const savedMessages = localStorage.getItem(`wellura-chat-${newConversationId}`);
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+        setIsFirstInteraction(false); // Not first interaction if we have saved messages
+      } catch (e) {
+        console.error("Error parsing saved messages:", e);
+      }
+    } else {
+      // No saved messages found, this is a first interaction
+      setIsFirstInteraction(true);
+    }
     
     // Use the profile data from context if available, otherwise fetch it
     if (userProfile) {
@@ -74,6 +84,13 @@ const Chat = () => {
     }
   }, [userId, userProfile]);
 
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (conversationId && messages.length > 0) {
+      localStorage.setItem(`wellura-chat-${conversationId}`, JSON.stringify(messages));
+    }
+  }, [messages, conversationId]);
+
   // Function to lookup health information from the internet
   const lookupHealthInformation = async (query: string) => {
     try {
@@ -91,12 +108,14 @@ const Chat = () => {
       }]);
       
       // Call the Supabase Edge Function to get health information
-      // Pass message history for context
+      // Pass message history for context and conversation persistence
       const { data, error } = await supabase.functions.invoke('health-lookup', {
         body: { 
           query, 
           userProfile: localUserProfile,
-          messageHistory: messages
+          messageHistory: messages,
+          isFirstInteraction,
+          conversationId
         }
       });
       
@@ -105,7 +124,11 @@ const Chat = () => {
       
       if (error) {
         console.error("Error calling health-lookup function:", error);
-        return null;
+        throw new Error(error.message);
+      }
+      
+      if (!data.success) {
+        throw new Error(data.error || "Unknown error occurred");
       }
       
       return data.response;
@@ -119,9 +142,9 @@ const Chat = () => {
   
   const getThinkingMessage = (language: "pt" | "es" | "en"): string => {
     const messages = {
-      pt: "Deixe-me pesquisar isso para você...",
-      es: "Déjame buscar eso para ti...",
-      en: "Give me a second to look that up for you..."
+      pt: "Pesquisando informações para você...",
+      es: "Buscando información para ti...",
+      en: "Looking up information for you..."
     };
     
     return messages[language];
@@ -169,9 +192,8 @@ const Chat = () => {
       // Add assistant message to chat
       setMessages((prev) => [...prev, assistantMessage]);
       
-      // Mark that user has had a chat interaction
+      // Mark that this is no longer the first interaction of the session
       if (isFirstInteraction) {
-        localStorage.setItem("wellura-had-chat", "true");
         setIsFirstInteraction(false);
       }
       
@@ -316,13 +338,13 @@ const Chat = () => {
                     <div className="mb-1 text-xs opacity-70">
                       {message.role === "user" ? "You" : "AI Consultant"}
                     </div>
-                    <div>{message.content}</div>
+                    <div className="text-foreground">{message.content}</div>
                   </div>
                 ))}
                 {isLoading && !isThinking && (
                   <div className="chat-bubble assistant animate-pulse-slow">
                     <div className="mb-1 text-xs opacity-70">AI Consultant</div>
-                    <div>Thinking...</div>
+                    <div className="text-foreground">Thinking...</div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
