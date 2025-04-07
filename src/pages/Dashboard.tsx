@@ -9,9 +9,9 @@ import {
   BookText, 
   Utensils, 
   Dumbbell, 
-  BarChart3, 
+  MapPin, 
   MessageCircle, 
-  HeartHandshake
+  Users
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -39,10 +39,10 @@ const Dashboard = () => {
       link: "/training"
     },
     {
-      title: "View Health Report",
-      description: "View comprehensive reports on your health and wellbeing.",
-      icon: BarChart3,
-      link: "/report"
+      title: "Nearby Gyms",
+      description: "Find the highest-rated gyms in your area with detailed information.",
+      icon: MapPin,
+      link: "/nearby-gyms"
     },
     {
       title: "Talk to AI Consultant",
@@ -51,10 +51,10 @@ const Dashboard = () => {
       link: "/chat"
     },
     {
-      title: "Continuous Support",
-      description: "Receive ongoing monitoring of your progress with adjustments when necessary.",
-      icon: HeartHandshake,
-      link: "/support"
+      title: "Find Health Professionals",
+      description: "Discover qualified health professionals in your area based on your needs.",
+      icon: Users,
+      link: "/find-professionals"
     }
   ];
 
@@ -120,16 +120,16 @@ const Dashboard = () => {
               </Button>
               
               <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/meals">
-                  <Utensils className="h-6 w-6 mb-1" />
-                  <span>Meal Plans</span>
+                <Link to="/nearby-gyms">
+                  <MapPin className="h-6 w-6 mb-1" />
+                  <span>Nearby Gyms</span>
                 </Link>
               </Button>
               
               <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/training">
-                  <Dumbbell className="h-6 w-6 mb-1" />
-                  <span>Training Plan</span>
+                <Link to="/find-professionals">
+                  <Users className="h-6 w-6 mb-1" />
+                  <span>Health Professionals</span>
                 </Link>
               </Button>
             </div>

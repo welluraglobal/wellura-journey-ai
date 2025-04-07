@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import PlanGenerator from "./pages/PlanGenerator";
 import Chat from "./pages/Chat";
 import Quiz from "./pages/Quiz";
+import NearbyGyms from "./pages/NearbyGyms";
+import FindProfessionals from "./pages/FindProfessionals";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
@@ -193,6 +195,26 @@ const App = () => {
                 element={
                   isLoggedIn && hasProfile ? (
                     <Chat />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/nearby-gyms"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <NearbyGyms />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/find-professionals"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <FindProfessionals />
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
