@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,11 +36,9 @@ const App = () => {
   const [userId, setUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<any>(null);
   
-  // Check authentication status on app load with Supabase
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        // Check for existing session first
         const { data: { session } } = await supabase.auth.getSession();
         const isAuthenticated = !!session;
         
@@ -49,7 +46,6 @@ const App = () => {
           setIsLoggedIn(true);
           setUserId(session.user.id);
           
-          // Fetch complete profile data
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -57,7 +53,6 @@ const App = () => {
             .single();
             
           if (profile) {
-            // Save all profile data to context
             setUserProfile(profile);
             
             if (profile.first_name) {
@@ -69,17 +64,14 @@ const App = () => {
           }
         }
         
-        // Set up auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
             const isAuthenticated = !!session;
             setIsLoggedIn(isAuthenticated);
             
-            // If user is authenticated, fetch profile information
             if (isAuthenticated && session?.user?.id) {
               setUserId(session.user.id);
               
-              // Use setTimeout to prevent Supabase auth deadlocks
               setTimeout(async () => {
                 try {
                   const { data: profile, error } = await supabase
@@ -89,7 +81,6 @@ const App = () => {
                     .single();
                     
                   if (profile) {
-                    // Save complete profile to context
                     setUserProfile(profile);
                     
                     if (profile.first_name) {
@@ -190,6 +181,56 @@ const App = () => {
                 element={
                   isLoggedIn && hasProfile ? (
                     <Chat />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/quiz"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <Navigate to="/plan-generator" replace />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/meals"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <Navigate to="/plan-generator" replace />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/training"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <Navigate to="/plan-generator" replace />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <Navigate to="/dashboard" replace />
+                  ) : (
+                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                  )
+                }
+              />
+              <Route
+                path="/support"
+                element={
+                  isLoggedIn && hasProfile ? (
+                    <Navigate to="/chat" replace />
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )

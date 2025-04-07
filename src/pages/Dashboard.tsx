@@ -30,19 +30,19 @@ const Dashboard = () => {
       title: "Access Meal Plans",
       description: "Access personalized meal plans based on your preferences and goals.",
       icon: Utensils,
-      link: "/meal-plan"
+      link: "/meals"
     },
     {
       title: "Start Training Plan",
       description: "Get a customized exercise plan based on your objectives and preferences.",
       icon: Dumbbell,
-      link: "/workout-plan"
+      link: "/training"
     },
     {
       title: "View Health Report",
       description: "View comprehensive reports on your health and wellbeing.",
       icon: BarChart3,
-      link: "/reports"
+      link: "/report"
     },
     {
       title: "Talk to AI Consultant",
@@ -120,14 +120,14 @@ const Dashboard = () => {
               </Button>
               
               <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/meal-plan">
+                <Link to="/meals">
                   <Utensils className="h-6 w-6 mb-1" />
                   <span>Meal Plans</span>
                 </Link>
               </Button>
               
               <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/workout-plan">
+                <Link to="/training">
                   <Dumbbell className="h-6 w-6 mb-1" />
                   <span>Training Plan</span>
                 </Link>
