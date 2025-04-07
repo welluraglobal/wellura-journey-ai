@@ -1,6 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Define the Message interface
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
 // Function to fetch user profile data from Supabase
 export const fetchUserProfile = async (userId: string) => {
   if (!userId) return null;
