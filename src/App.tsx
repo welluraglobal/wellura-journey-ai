@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import ProfileSetup from "./pages/ProfileSetup";
 import Dashboard from "./pages/Dashboard";
 import PlanGenerator from "./pages/PlanGenerator";
 import Chat from "./pages/Chat";
+import Quiz from "./pages/Quiz";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
@@ -177,20 +179,20 @@ const App = () => {
                 }
               />
               <Route
-                path="/chat"
+                path="/quiz"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <Chat />
+                    <Quiz />
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
                 }
               />
               <Route
-                path="/quiz"
+                path="/chat"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <Navigate to="/plan-generator" replace />
+                    <Chat />
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
