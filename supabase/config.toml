@@ -31,5 +31,6 @@ enabled = true
 [functions.health-lookup]
 verify_jwt = true
 
-[functions.places-search]
+[functions.google-places-search]
 verify_jwt = true
+

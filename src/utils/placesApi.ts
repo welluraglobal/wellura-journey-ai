@@ -14,7 +14,7 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
     console.log(`Searching for ${type} near ${location}...`);
     
     // Use Supabase Edge Function to proxy the Places API request
-    const { data, error } = await supabase.functions.invoke("places-search", {
+    const { data, error } = await supabase.functions.invoke("google-places-search", {
       body: { 
         location,
         type
