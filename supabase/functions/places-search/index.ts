@@ -4,6 +4,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Access Google Places API key from environment variables
 const GOOGLE_PLACES_API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY") || "";
 
+console.log("API key configured:", GOOGLE_PLACES_API_KEY ? "Yes (length: " + GOOGLE_PLACES_API_KEY.length + ")" : "No");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
