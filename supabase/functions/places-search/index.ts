@@ -41,7 +41,6 @@ serve(async (req) => {
     console.log(`Searching for ${type} in ${location}`);
 
     // Step 1: Convert the location (city name) to coordinates using Geocoding API
-    // Use 'region' parameter to improve geocoding accuracy for city names
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${GOOGLE_PLACES_API_KEY}`;
     
     console.log("Fetching geocode data...");
@@ -51,6 +50,7 @@ serve(async (req) => {
     // Log geocoding response for debugging
     console.log("Geocode API response status:", geocodeRes.status);
     console.log("Geocode API response status text:", geocodeData.status);
+    console.log("Geocode API full response:", JSON.stringify(geocodeData).slice(0, 500) + "...");
     
     if (geocodeRes.status !== 200) {
       console.error("Geocoding API HTTP error:", geocodeRes.status, geocodeRes.statusText);
@@ -136,6 +136,7 @@ serve(async (req) => {
     // Log places API response for debugging
     console.log("Places API response status:", placesRes.status);
     console.log("Places API response status text:", placesData.status);
+    console.log("Places API response:", JSON.stringify(placesData).slice(0, 500) + "...");
     
     if (placesRes.status !== 200) {
       console.error("Places API HTTP error:", placesRes.status, placesRes.statusText);
