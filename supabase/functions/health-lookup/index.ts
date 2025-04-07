@@ -19,8 +19,24 @@ serve(async (req) => {
     
     console.log("Health lookup request:", { query, userProfile: userProfile ? "provided" : "not provided" });
     
+    // Create a structured prompt for the coach
+    const userProfileData = userProfile || {};
+    const prompt = `
+You are a friendly, humanized wellness coach working for Wellura App. Speak with empathy and motivation. Use the user's profile data:
+
+Name: ${userProfileData.first_name || ""}
+Age: ${userProfileData.age || ""}
+Height: ${userProfileData.height || ""}m
+Weight: ${userProfileData.weight || ""}kg
+Goal: ${userProfileData.main_goal || ""}
+
+Respond naturally like a real coach, adapting tone and vocabulary. If the user is from Brazil, speak in Portuguese. Avoid robotic answers. Only greet them once per session.
+
+Now respond to the following message: "${query}"
+`;
+    
     // For demo purposes, simulate a lookup with specific responses for common health topics
-    const response = await simulateHealthLookup(query, userProfile);
+    const response = await simulateHealthLookup(query, userProfile, prompt);
     
     return new Response(
       JSON.stringify({ 
@@ -49,7 +65,7 @@ serve(async (req) => {
 });
 
 // Helper function to simulate health information lookup
-async function simulateHealthLookup(query: string, userProfile: any): Promise<string> {
+async function simulateHealthLookup(query: string, userProfile: any, prompt: string): Promise<string> {
   // Convert query to lowercase for easier matching
   const lowerQuery = query.toLowerCase();
   
