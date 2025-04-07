@@ -152,39 +152,33 @@ async function geocodeLocation(location) {
     };
   }
 
-  // Check Google API-specific status
-  if (geocodeData.status !== "OK") {
+  // Check Google API-specific status - Important: For ZERO_RESULTS, just return empty results
+  // instead of an error to provide a better user experience
+  if (geocodeData.status === "ZERO_RESULTS") {
+    console.log("✅ No geocode results found for location:", location);
+    // Return empty results instead of error for better UX
+    return { 
+      emptyResults: true,
+      coordinates: { lat: 0, lng: 0 }
+    };
+  } else if (geocodeData.status !== "OK") {
     console.error("❌ Geocoding API returned non-OK status:", geocodeData.status);
-    
-    // Handle common geocoding errors
-    if (geocodeData.status === "ZERO_RESULTS") {
-      return { 
-        error: createErrorResponse(
-          404,
-          "Location not found", 
-          "We couldn't find this location. Please try a more specific city name or check spelling."
-        ) 
-      };
-    } else {
-      return { 
-        error: createErrorResponse(
-          500,
-          geocodeData.status, 
-          geocodeData.error_message || "Error processing location."
-        ) 
-      };
-    }
+    return { 
+      error: createErrorResponse(
+        500,
+        geocodeData.status, 
+        geocodeData.error_message || "Error processing location."
+      ) 
+    };
   }
 
   // Check for empty geocode results
   if (!geocodeData.results || geocodeData.results.length === 0) {
-    console.log("❌ No geocode results found");
+    console.log("❌ No geocode results found for location:", location);
+    // Return empty results instead of error for better UX
     return { 
-      error: createErrorResponse(
-        404,
-        "Location not found", 
-        "We couldn't find this location. Please try a more specific city name or check spelling."
-      ) 
+      emptyResults: true,
+      coordinates: { lat: 0, lng: 0 }
     };
   }
 
@@ -196,6 +190,18 @@ async function geocodeLocation(location) {
 }
 
 async function searchNearbyPlaces(lat, lng, type) {
+  // If we have empty results from geocoding, return empty results directly
+  if (lat === 0 && lng === 0) {
+    console.log("✅ Returning empty results due to location not found");
+    return { 
+      placesData: {
+        results: [],
+        status: "ZERO_RESULTS",
+        message: "No places found near this location. Please try a different location."
+      }
+    };
+  }
+
   const radius = 10000; // 10km radius
   const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(type || "")}&key=${GOOGLE_PLACES_API_KEY}`;
   
@@ -356,7 +362,7 @@ serve(async (req) => {
     console.log(`✅ Searching for ${type || "places"} in ${location}`);
 
     // STEP 1: Convert the location (city name) to coordinates
-    const { coordinates, error: geocodeError } = await geocodeLocation(location);
+    const { coordinates, error: geocodeError, emptyResults } = await geocodeLocation(location);
     if (geocodeError) return geocodeError;
 
     // STEP 2: Search for places using the Nearby Search API
