@@ -16,14 +16,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Create a standard error response
- * @param status HTTP status code
- * @param error Error code/type
- * @param message User-friendly error message
- * @param technicalDetails Optional technical details for debugging
- */
-function createErrorResponse(status: number, error: string, message: string, technicalDetails?: string) {
+// Helper functions for API responses
+function createErrorResponse(status, error, message, technicalDetails) {
   console.error(`❌ Error response: ${status} - ${error} - ${message}`);
   
   const responseBody = {
@@ -41,10 +35,6 @@ function createErrorResponse(status: number, error: string, message: string, tec
   );
 }
 
-/**
- * Validate the Google Places API key
- * @returns Error response or null if valid
- */
 function validateApiKey() {
   if (!GOOGLE_PLACES_API_KEY) {
     console.error("❌ Google Places API key is not configured");
@@ -57,12 +47,7 @@ function validateApiKey() {
   return null;
 }
 
-/**
- * Parse and validate the request body
- * @param req The request object
- * @returns Parsed body or error response
- */
-async function parseRequestBody(req: Request) {
+async function parseRequestBody(req) {
   try {
     const body = await req.json();
     console.log("✅ Request body parsed:", JSON.stringify(body).slice(0, 200) + "...");
@@ -93,12 +78,7 @@ async function parseRequestBody(req: Request) {
   }
 }
 
-/**
- * Geocode a location string to coordinates
- * @param location Location string (address, city, etc)
- * @returns Coordinates or error response
- */
-async function geocodeLocation(location: string) {
+async function geocodeLocation(location) {
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${GOOGLE_PLACES_API_KEY}`;
   
   console.log("✅ Fetching geocode data...");
@@ -215,14 +195,7 @@ async function geocodeLocation(location: string) {
   return { coordinates: { lat, lng } };
 }
 
-/**
- * Search for places near coordinates
- * @param lat Latitude
- * @param lng Longitude
- * @param type Place type or keyword
- * @returns Places data or error response
- */
-async function searchNearbyPlaces(lat: number, lng: number, type: string) {
+async function searchNearbyPlaces(lat, lng, type) {
   const radius = 10000; // 10km radius
   const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(type || "")}&key=${GOOGLE_PLACES_API_KEY}`;
   
@@ -312,14 +285,7 @@ async function searchNearbyPlaces(lat: number, lng: number, type: string) {
   return { placesData };
 }
 
-/**
- * Process places data to add distance calculations and sort by proximity
- * @param placesData Raw Places API response
- * @param originLat Origin latitude
- * @param originLng Origin longitude
- * @returns Processed places data
- */
-function processPlacesData(placesData: any, originLat: number, originLng: number) {
+function processPlacesData(placesData, originLat, originLng) {
   // Handle zero results case
   if (placesData.status === "ZERO_RESULTS" || !placesData.results || placesData.results.length === 0) {
     console.log("✅ No places found - returning empty results array");
@@ -334,7 +300,7 @@ function processPlacesData(placesData: any, originLat: number, originLng: number
   if (placesData.results && Array.isArray(placesData.results)) {
     console.log(`✅ Found ${placesData.results.length} places - processing results`);
     
-    placesData.results = placesData.results.map((place: any) => {
+    placesData.results = placesData.results.map((place) => {
       // Calculate approximate distance (very basic)
       if (place.geometry && place.geometry.location) {
         const placeLat = place.geometry.location.lat;
@@ -358,7 +324,7 @@ function processPlacesData(placesData: any, originLat: number, originLng: number
     });
     
     // Sort by distance
-    placesData.results.sort((a: any, b: any) => {
+    placesData.results.sort((a, b) => {
       return (a.distance || Infinity) - (b.distance || Infinity);
     });
   }
