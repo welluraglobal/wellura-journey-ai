@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Sparkles } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/hooks/use-toast";
 
 type Message = {
   id: string;
@@ -25,28 +24,21 @@ const Chat = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  // Initialize conversation on component mount
   useEffect(() => {
-    // Generate a conversation ID for this session
     const newConversationId = `wellura-conv-${Date.now()}`;
     setConversationId(newConversationId);
     
-    // Check if this is the first interaction (using localStorage for demo)
     const hadPreviousInteraction = localStorage.getItem("wellura-had-chat");
     setIsFirstInteraction(!hadPreviousInteraction);
-    
-    // When Supabase is integrated, we would fetch previous messages here
   }, []);
   
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
-    // Add user message to the chat
     const userMessageId = `msg-${Date.now()}`;
     const userMessage: Message = {
       id: userMessageId,
@@ -60,19 +52,13 @@ const Chat = () => {
     setIsLoading(true);
     
     try {
-      // This is where the actual AI integration would happen with Supabase
-      // For now, we'll simulate a response after a delay
-      
-      // Detect message language for demo (more sophisticated detection would be used with real AI)
       const isPortuguese = /[áàãâéêíóôõúüçÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(newMessage) || 
                           /obrigad|bom dia|boa tarde|boa noite|como vai|tudo bem/.test(newMessage.toLowerCase());
       
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       let responseContent = "";
       
-      // Generate appropriate response based on whether it's the first interaction
       if (isFirstInteraction) {
         if (isPortuguese) {
           responseContent = `Olá, ${firstName || "amigo"}! 😊 Bem-vindo ao Wellura Brasil. Sou seu consultor de bem-estar e estou aqui para te ajudar a alcançar seus objetivos de saúde. Como posso te ajudar hoje?`;
@@ -80,11 +66,9 @@ const Chat = () => {
           responseContent = `Hello, ${firstName || "friend"}! 😊 Welcome to Wellura Brasil. I'm your wellness consultant and I'm here to help you achieve your health goals. How can I assist you today?`;
         }
         
-        // Mark that the user has had their first interaction
         localStorage.setItem("wellura-had-chat", "true");
         setIsFirstInteraction(false);
       } else {
-        // Regular response based on detected language
         if (isPortuguese) {
           responseContent = "Estou aqui para ajudar com seus objetivos de saúde e bem-estar. Posso fornecer orientações sobre nutrição, exercícios, ou responder perguntas sobre seu plano personalizado. Como posso ajudar hoje? 💪";
         } else {
@@ -92,7 +76,6 @@ const Chat = () => {
         }
       }
       
-      // Add AI response to chat
       const assistantMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         role: "assistant",
@@ -130,7 +113,6 @@ const Chat = () => {
         </div>
         
         <div className="flex-1 border rounded-lg flex flex-col overflow-hidden bg-card">
-          {/* Chat Messages Area */}
           <div className="flex-1 p-4 overflow-y-auto">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
@@ -196,7 +178,6 @@ const Chat = () => {
             )}
           </div>
           
-          {/* Message Input Area */}
           <div className="border-t p-4">
             <div className="flex space-x-2">
               <Textarea

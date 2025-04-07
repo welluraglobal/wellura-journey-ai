@@ -1,4 +1,3 @@
-
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const location = useLocation();
@@ -23,7 +22,6 @@ const Auth = () => {
   const { setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
   
-  // Update the tab when the URL query parameter changes
   useEffect(() => {
     const newMode = queryParams.get("mode") === "login" ? "login" : "signup";
     setMode(newMode);
@@ -34,7 +32,6 @@ const Auth = () => {
     setIsLoading(true);
     
     try {
-      // Basic validation
       if (!email || !password) {
         toast.error("Please fill in all required fields");
         return;
@@ -45,22 +42,15 @@ const Auth = () => {
         return;
       }
       
-      // Placeholder for Supabase authentication
-      // This will be replaced with actual Supabase auth once integrated
-      
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (mode === "signup") {
-        // Mock signup success
         toast.success("Account created successfully!");
       }
       
-      // Set auth state in context and local storage for demo purposes
       setIsLoggedIn(true);
       localStorage.setItem("wellura-authenticated", "true");
       
-      // Redirect to profile setup for new users
       navigate("/profile-setup");
       
     } catch (error) {
