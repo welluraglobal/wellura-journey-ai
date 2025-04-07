@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
@@ -6,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { detectLanguage, fetchUserProfile, generateResponse, getContextualEmoji } from "@/utils/aiChatUtils";
 
 type Message = {
   id: string;
@@ -15,31 +18,63 @@ type Message = {
 };
 
 const Chat = () => {
-  const { firstName } = useContext(UserContext);
+  const { firstName, isLoggedIn } = useContext(UserContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isFirstInteraction, setIsFirstInteraction] = useState(true);
+  const [userLanguage, setUserLanguage] = useState<"pt" | "es" | "en">("en");
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Scroll to bottom of chat when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
+  // Initialize conversation and check for previous interaction
   useEffect(() => {
+    // Generate a stable conversation ID based on user ID or session
     const newConversationId = `wellura-conv-${Date.now()}`;
     setConversationId(newConversationId);
     
+    // Check if user had previous chat interactions
     const hadPreviousInteraction = localStorage.getItem("wellura-had-chat");
     setIsFirstInteraction(!hadPreviousInteraction);
-  }, []);
+    
+    // Fetch user profile data if logged in
+    const fetchProfile = async () => {
+      if (isLoggedIn) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const profile = await fetchUserProfile(user.id);
+          setUserProfile(profile);
+          
+          // Try to detect user's preferred language from browser
+          const browserLang = navigator.language.toLowerCase();
+          if (browserLang.startsWith('pt')) {
+            setUserLanguage('pt');
+          } else if (browserLang.startsWith('es')) {
+            setUserLanguage('es');
+          } else {
+            setUserLanguage('en');
+          }
+        }
+      }
+    };
+    
+    fetchProfile();
+  }, [isLoggedIn]);
   
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
+    // Generate a unique ID for this message
     const userMessageId = `msg-${Date.now()}`;
+    
+    // Create user message object
     const userMessage: Message = {
       id: userMessageId,
       role: "user",
@@ -47,35 +82,30 @@ const Chat = () => {
       timestamp: new Date(),
     };
     
+    // Add user message to chat
     setMessages((prev) => [...prev, userMessage]);
     setNewMessage("");
     setIsLoading(true);
     
     try {
-      const isPortuguese = /[áàãâéêíóôõúüçÁÀÃÂÉÊÍÓÔÕÚÜÇ]/.test(newMessage) || 
-                          /obrigad|bom dia|boa tarde|boa noite|como vai|tudo bem/.test(newMessage.toLowerCase());
+      // Detect language from the message
+      const detectedLanguage = detectLanguage(newMessage);
+      setUserLanguage(detectedLanguage);
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate network delay (can be removed in production)
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      let responseContent = "";
+      // Generate personalized response based on context
+      const responseContent = await generateResponse(
+        newMessage, 
+        firstName || userProfile?.first_name || "",
+        detectedLanguage,
+        userProfile?.main_goal,
+        messages,
+        isFirstInteraction
+      );
       
-      if (isFirstInteraction) {
-        if (isPortuguese) {
-          responseContent = `Olá, ${firstName || "amigo"}! 😊 Bem-vindo ao Wellura App. Sou seu consultor de bem-estar e estou aqui para te ajudar a alcançar seus objetivos de saúde. Como posso te ajudar hoje?`;
-        } else {
-          responseContent = `Hello, ${firstName || "friend"}! 😊 Welcome to Wellura App. I'm your wellness consultant and I'm here to help you achieve your health goals. How can I assist you today?`;
-        }
-        
-        localStorage.setItem("wellura-had-chat", "true");
-        setIsFirstInteraction(false);
-      } else {
-        if (isPortuguese) {
-          responseContent = "Estou aqui para ajudar com seus objetivos de saúde e bem-estar. Posso fornecer orientações sobre nutrição, exercícios, ou responder perguntas sobre seu plano personalizado. Como posso ajudar hoje? 💪";
-        } else {
-          responseContent = "I'm here to help with your health and wellness goals. I can provide guidance on nutrition, exercise, or answer questions about your personalized plan. How can I assist you today? 💪";
-        }
-      }
-      
+      // Create assistant message with contextualized emoji
       const assistantMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         role: "assistant",
@@ -83,7 +113,14 @@ const Chat = () => {
         timestamp: new Date(),
       };
       
+      // Add assistant message to chat
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      // Mark that user has had a chat interaction
+      if (isFirstInteraction) {
+        localStorage.setItem("wellura-had-chat", "true");
+        setIsFirstInteraction(false);
+      }
       
     } catch (error) {
       console.error("Error in AI chat:", error);
@@ -98,6 +135,32 @@ const Chat = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Suggest questions based on user's language
+  const getSuggestedQuestions = () => {
+    const questions = {
+      en: [
+        "How can I improve my sleep quality?",
+        "What foods support my fitness goals?",
+        "How often should I exercise each week?",
+        "Tips for staying motivated with my plan?"
+      ],
+      pt: [
+        "Como posso melhorar a qualidade do meu sono?",
+        "Que alimentos apoiam meus objetivos de fitness?",
+        "Com que frequência devo me exercitar por semana?",
+        "Dicas para manter a motivação com meu plano?"
+      ],
+      es: [
+        "¿Cómo puedo mejorar la calidad de mi sueño?",
+        "¿Qué alimentos apoyan mis objetivos de fitness?",
+        "¿Con qué frecuencia debo hacer ejercicio cada semana?",
+        "¿Consejos para mantenerme motivado con mi plan?"
+      ]
+    };
+    
+    return questions[userLanguage];
   };
 
   return (
@@ -124,34 +187,16 @@ const Chat = () => {
                   Ask questions about nutrition, fitness, your personalized plans, or any wellness topic that interests you.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => setNewMessage("How can I improve my sleep quality?")}
-                  >
-                    How can I improve my sleep?
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => setNewMessage("What foods should I eat to support my fitness goals?")}
-                  >
-                    Nutrition for my fitness goals
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => setNewMessage("How often should I exercise each week?")}
-                  >
-                    Weekly exercise frequency
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => setNewMessage("How can I stay motivated to follow my plan?")}
-                  >
-                    Tips for staying motivated
-                  </Button>
+                  {getSuggestedQuestions().map((question, index) => (
+                    <Button 
+                      key={index}
+                      variant="outline" 
+                      className="justify-start"
+                      onClick={() => setNewMessage(question)}
+                    >
+                      {question}
+                    </Button>
+                  ))}
                 </div>
               </div>
             ) : (
@@ -184,7 +229,11 @@ const Chat = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
+                placeholder={
+                  userLanguage === "pt" ? "Digite sua mensagem..." : 
+                  userLanguage === "es" ? "Escribe tu mensaje..." :
+                  "Type your message..."
+                }
                 className="flex-1 min-h-[80px] max-h-[160px]"
                 disabled={isLoading}
               />
@@ -198,8 +247,15 @@ const Chat = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Your AI consultant adapts to your language preference automatically.
-              {isLoading ? " Generating response..." : ""}
+              {userLanguage === "pt" ? 
+                "Seu consultor adapta-se automaticamente ao seu idioma preferido." :
+                userLanguage === "es" ? 
+                "Su consultor se adapta automáticamente a su idioma preferido." :
+                "Your AI consultant adapts to your language preference automatically."}
+              {isLoading ? 
+                (userLanguage === "pt" ? " Gerando resposta..." : 
+                userLanguage === "es" ? " Generando respuesta..." : 
+                " Generating response...") : ""}
             </p>
           </div>
         </div>
