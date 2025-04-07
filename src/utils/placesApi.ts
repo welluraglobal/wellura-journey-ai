@@ -52,6 +52,11 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
         throw new Error(data.message || "The Google Places API key doesn't have the necessary permissions. Please enable the required APIs in Google Cloud Console.");
       }
       
+      // Handle location not found errors
+      if (data.error === "Location not found") {
+        throw new Error(data.message || "We couldn't find this location. Please try a more specific city name or check spelling.");
+      }
+      
       throw new Error(data.message || data.error_message || data.error || "Error from Places API");
     }
     
