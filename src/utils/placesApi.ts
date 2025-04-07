@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const searchNearbyPlaces = async (location: string, type: string): Promise<PlaceResult[]> => {
   try {
+    console.log(`Searching for ${type} near ${location}...`);
+    
     // Use Supabase Edge Function to proxy the Places API request
     const { data, error } = await supabase.functions.invoke("places-search", {
       body: { 
@@ -27,6 +29,7 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
         throw new Error("Google Places API key not configured. Please contact the site administrator.");
       }
       
+      // Propagate the error message
       throw new Error(error.message || "Failed to search for places");
     }
     
@@ -35,6 +38,7 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
       return [];
     }
     
+    // Check for error messages in the response data
     if (data.error) {
       console.error("Error in Places API response:", data.error, data.message || data.error_message);
       throw new Error(data.message || data.error_message || data.error || "Error from Places API");
@@ -50,6 +54,8 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
       console.warn("Invalid results format from Places API:", data);
       return [];
     }
+    
+    console.log(`Successfully found ${data.results.length} places`);
     
     // Process and return the results
     return data.results.map((place: any) => ({

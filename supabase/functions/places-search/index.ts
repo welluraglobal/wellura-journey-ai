@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Access Google Places API key from environment variables
 const GOOGLE_PLACES_API_KEY = Deno.env.get("GOOGLE_PLACES_API_KEY") || "";
 
 const corsHeaders = {
@@ -50,6 +51,7 @@ serve(async (req) => {
     // Log geocoding response for debugging
     console.log("Geocode API response status:", geocodeRes.status);
     console.log("Geocode API response status text:", geocodeData.status);
+    console.log("Geocode API full response:", JSON.stringify(geocodeData));
     
     if (geocodeRes.status !== 200) {
       console.error("Geocoding API HTTP error:", geocodeRes.status, geocodeRes.statusText);
@@ -74,6 +76,15 @@ serve(async (req) => {
             message: "We couldn't find this location. Please try a more specific city name or check spelling."
           }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else if (geocodeData.status === "REQUEST_DENIED") {
+        console.error("Geocoding API request denied:", geocodeData.error_message);
+        return new Response(
+          JSON.stringify({ 
+            error: "API request denied", 
+            message: geocodeData.error_message || "API request was denied. Please check API key configuration."
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } else {
         return new Response(
@@ -110,6 +121,7 @@ serve(async (req) => {
     // Log places API response for debugging
     console.log("Places API response status:", placesRes.status);
     console.log("Places API response status text:", placesData.status);
+    console.log("Places API full response:", JSON.stringify(placesData).substring(0, 500) + "...");
     
     if (placesRes.status !== 200) {
       console.error("Places API HTTP error:", placesRes.status, placesRes.statusText);
@@ -125,13 +137,25 @@ serve(async (req) => {
     // Check Google API-specific status
     if (placesData.status !== "OK" && placesData.status !== "ZERO_RESULTS") {
       console.error("Places API returned error status:", placesData.status, placesData.error_message);
-      return new Response(
-        JSON.stringify({ 
-          error: placesData.status, 
-          message: placesData.error_message || "Error finding places near this location" 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      
+      if (placesData.status === "REQUEST_DENIED") {
+        console.error("Places API request denied:", placesData.error_message);
+        return new Response(
+          JSON.stringify({ 
+            error: "API request denied", 
+            message: placesData.error_message || "API request was denied. Please check API key configuration."
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ 
+            error: placesData.status, 
+            message: placesData.error_message || "Error finding places near this location" 
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Handle zero results case
@@ -182,6 +206,7 @@ serve(async (req) => {
       console.log("Invalid results format");
     }
 
+    console.log("Successfully found and processed places data");
     return new Response(
       JSON.stringify(placesData),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
