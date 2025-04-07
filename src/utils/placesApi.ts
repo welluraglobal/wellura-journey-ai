@@ -29,6 +29,11 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
         throw new Error("Google Places API key not configured. Please contact the site administrator.");
       }
       
+      // Check if it's an authorization error
+      if (error.message?.includes("authorization error") || error.message?.includes("API request was denied")) {
+        throw new Error(error.message || "The Google Places API key doesn't have the necessary permissions. Please enable the required APIs in Google Cloud Console.");
+      }
+      
       // Propagate the error message
       throw new Error(error.message || "Failed to search for places");
     }
@@ -41,6 +46,12 @@ export const searchNearbyPlaces = async (location: string, type: string): Promis
     // Check for error messages in the response data
     if (data.error) {
       console.error("Error in Places API response:", data.error, data.message || data.error_message);
+      
+      // Handle API authorization errors
+      if (data.error === "API authorization error") {
+        throw new Error(data.message || "The Google Places API key doesn't have the necessary permissions. Please enable the required APIs in Google Cloud Console.");
+      }
+      
       throw new Error(data.message || data.error_message || data.error || "Error from Places API");
     }
     

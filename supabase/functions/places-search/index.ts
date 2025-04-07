@@ -51,7 +51,6 @@ serve(async (req) => {
     // Log geocoding response for debugging
     console.log("Geocode API response status:", geocodeRes.status);
     console.log("Geocode API response status text:", geocodeData.status);
-    console.log("Geocode API full response:", JSON.stringify(geocodeData));
     
     if (geocodeRes.status !== 200) {
       console.error("Geocoding API HTTP error:", geocodeRes.status, geocodeRes.statusText);
@@ -61,6 +60,31 @@ serve(async (req) => {
           message: geocodeData.error_message || "Failed to convert location to coordinates" 
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for API authorization issues
+    if (geocodeData.status === "REQUEST_DENIED") {
+      const errorMessage = geocodeData.error_message || "API request was denied";
+      console.error("Google API authorization error:", errorMessage);
+      
+      let userMessage = "The Google Places API request was denied. ";
+      
+      if (errorMessage.includes("not authorized to use this API")) {
+        userMessage += "Your API key doesn't have the necessary APIs enabled. Please enable the Geocoding API, Places API, and Maps JavaScript API in your Google Cloud Console.";
+      } else if (errorMessage.includes("API key")) {
+        userMessage += "There may be an issue with your API key. Please check that it's valid and doesn't have any restrictions preventing its use.";
+      } else {
+        userMessage += errorMessage;
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: "API authorization error", 
+          message: userMessage,
+          technical_details: errorMessage
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -76,15 +100,6 @@ serve(async (req) => {
             message: "We couldn't find this location. Please try a more specific city name or check spelling."
           }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      } else if (geocodeData.status === "REQUEST_DENIED") {
-        console.error("Geocoding API request denied:", geocodeData.error_message);
-        return new Response(
-          JSON.stringify({ 
-            error: "API request denied", 
-            message: geocodeData.error_message || "API request was denied. Please check API key configuration."
-          }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } else {
         return new Response(
@@ -121,7 +136,6 @@ serve(async (req) => {
     // Log places API response for debugging
     console.log("Places API response status:", placesRes.status);
     console.log("Places API response status text:", placesData.status);
-    console.log("Places API full response:", JSON.stringify(placesData).substring(0, 500) + "...");
     
     if (placesRes.status !== 200) {
       console.error("Places API HTTP error:", placesRes.status, placesRes.statusText);
@@ -134,28 +148,41 @@ serve(async (req) => {
       );
     }
 
+    // Check for API authorization issues with Places API
+    if (placesData.status === "REQUEST_DENIED") {
+      const errorMessage = placesData.error_message || "API request was denied";
+      console.error("Google Places API authorization error:", errorMessage);
+      
+      let userMessage = "The Google Places API request was denied. ";
+      
+      if (errorMessage.includes("not authorized to use this API")) {
+        userMessage += "Your API key doesn't have the Places API enabled. Please enable it in your Google Cloud Console.";
+      } else if (errorMessage.includes("API key")) {
+        userMessage += "There may be an issue with your API key. Please check that it's valid and doesn't have any restrictions preventing its use.";
+      } else {
+        userMessage += errorMessage;
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: "API authorization error", 
+          message: userMessage,
+          technical_details: errorMessage
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check Google API-specific status
     if (placesData.status !== "OK" && placesData.status !== "ZERO_RESULTS") {
       console.error("Places API returned error status:", placesData.status, placesData.error_message);
-      
-      if (placesData.status === "REQUEST_DENIED") {
-        console.error("Places API request denied:", placesData.error_message);
-        return new Response(
-          JSON.stringify({ 
-            error: "API request denied", 
-            message: placesData.error_message || "API request was denied. Please check API key configuration."
-          }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      } else {
-        return new Response(
-          JSON.stringify({ 
-            error: placesData.status, 
-            message: placesData.error_message || "Error finding places near this location" 
-          }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      return new Response(
+        JSON.stringify({ 
+          error: placesData.status, 
+          message: placesData.error_message || "Error finding places near this location" 
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Handle zero results case
