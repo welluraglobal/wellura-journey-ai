@@ -167,6 +167,7 @@ const Chat = () => {
       let responseContent = "";
       if (internetResponse) {
         responseContent = internetResponse;
+        console.log("Using internet response:", responseContent.substring(0, 50) + "...");
       } else {
         // Otherwise, use our local response generation
         responseContent = await generateResponse(
@@ -177,9 +178,10 @@ const Chat = () => {
           messages,
           isFirstInteraction
         );
+        console.log("Using generated response:", responseContent.substring(0, 50) + "...");
       }
       
-      // Create assistant message with contextualized emoji
+      // Create assistant message
       const assistantMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         role: "assistant",
@@ -199,6 +201,20 @@ const Chat = () => {
     } catch (error) {
       console.error("Error in AI chat:", error);
       toast.error("Failed to get a response. Please try again.");
+      
+      // Add a fallback message in case of error
+      const fallbackMessage = {
+        id: `msg-${Date.now() + 1}`,
+        role: "assistant",
+        content: userLanguage === "pt" ? 
+          "Desculpe, tive um problema ao processar sua mensagem. Por favor, tente novamente." :
+          userLanguage === "es" ?
+          "Lo siento, tuve un problema al procesar tu mensaje. Por favor, intenta de nuevo." :
+          "Sorry, I had an issue processing your message. Please try again.",
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, fallbackMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -318,7 +334,7 @@ const Chat = () => {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`chat-bubble ${message.role === "user" ? "user" : "assistant"} ${message.id.startsWith('thinking-') ? 'thinking' : ''}`}
+                    className={`chat-bubble ${message.role === "user" ? "user" : "assistant"} ${message.id.startsWith('thinking-') ? 'thinking animate-pulse-slow' : ''}`}
                   >
                     <div className="mb-1 text-xs opacity-70">
                       {message.role === "user" ? "You" : "AI Consultant"}

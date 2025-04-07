@@ -69,21 +69,6 @@ export const generateResponse = async (
   try {
     console.log("Generating response for:", { message, firstName, language, mainGoal, isFirstInteraction });
     
-    // Check for internet data (simulated for now)
-    let internetData = null;
-    try {
-      // In the future, this would be a call to an edge function that fetches live data
-      if (message.toLowerCase().includes("supplement") || 
-          message.toLowerCase().includes("diet") || 
-          message.toLowerCase().includes("workout") ||
-          message.toLowerCase().includes("sleep")) {
-        // Simulating an internet lookup
-        internetData = "simulated_data";
-      }
-    } catch (error) {
-      console.error("Error fetching internet data:", error);
-    }
-    
     // Dictionary of responses based on language
     const responses = {
       greeting: {
@@ -136,8 +121,7 @@ export const generateResponse = async (
         firstName, 
         language, 
         mainGoal, 
-        messageHistory, 
-        internetData
+        messageHistory
       );
       
       if (contextAwareResponse) {
@@ -197,8 +181,7 @@ const generateContextAwareResponse = (
   firstName: string,
   language: "pt" | "es" | "en",
   mainGoal?: string,
-  messageHistory?: Message[],
-  internetData?: any
+  messageHistory?: Message[]
 ): string | null => {
   // This function would contain more sophisticated logic to analyze conversation context
   // For now, implementing a basic version
@@ -220,16 +203,6 @@ const generateContextAwareResponse = (
       };
       return responses[language];
     }
-  }
-  
-  // If we have internet data, use it in the response
-  if (internetData) {
-    const internetResponses = {
-      pt: `Baseado nas informações mais recentes que consultei, ${firstName}, aqui está o que você precisa saber sobre ${lowerMessage.includes("supplement") ? "suplementos" : lowerMessage.includes("diet") ? "dieta" : lowerMessage.includes("workout") ? "exercícios" : "isso"}.`,
-      es: `Según la información más reciente que consulté, ${firstName}, esto es lo que necesitas saber sobre ${lowerMessage.includes("supplement") ? "suplementos" : lowerMessage.includes("diet") ? "dieta" : lowerMessage.includes("workout") ? "ejercicios" : "esto"}.`,
-      en: `Based on the latest information I've looked up, ${firstName}, here's what you need to know about ${lowerMessage.includes("supplement") ? "supplements" : lowerMessage.includes("diet") ? "diet" : lowerMessage.includes("workout") ? "workouts" : "this"}.`
-    };
-    return internetResponses[language];
   }
   
   // No special context identified

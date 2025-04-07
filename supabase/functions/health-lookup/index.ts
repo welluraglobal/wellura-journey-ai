@@ -17,6 +17,8 @@ serve(async (req) => {
 
   try {
     const { query, userProfile } = await req.json();
+    console.log("Health lookup request received for query:", query);
+    console.log("User profile data:", userProfile);
 
     if (!openaiApiKey) {
       throw new Error('OpenAI API key is not configured');
@@ -49,6 +51,8 @@ serve(async (req) => {
     // Combine the system message with user context
     const fullSystemMessage = systemMessage + (userContext ? "\n\n" + userContext : "");
 
+    console.log("Calling OpenAI with system message:", fullSystemMessage);
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -60,9 +64,7 @@ serve(async (req) => {
     });
 
     const response = completion.choices[0].message.content;
-
-    // Log the successful response
-    console.log("Health lookup successful for query:", query);
+    console.log("Health lookup successful, response:", response.substring(0, 100) + "...");
 
     return new Response(JSON.stringify({ response }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
