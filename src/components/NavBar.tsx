@@ -24,6 +24,7 @@ import {
   Settings,
   Menu,
   LogOut,
+  ArrowLeft,
 } from "lucide-react";
 
 const NavBar = () => {
@@ -42,6 +43,10 @@ const NavBar = () => {
     navigate("/");
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: Home },
     { name: "My Plan", path: "/plan-generator", icon: BarChart },
@@ -55,6 +60,17 @@ const NavBar = () => {
   return (
     <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
       <div className="flex items-center">
+        {location.pathname !== "/" && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleBack} 
+            className="mr-2 text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
         <Link to="/dashboard" className="text-xl font-bold text-white mr-2">
           Wellura App
         </Link>
@@ -118,7 +134,7 @@ const NavBar = () => {
                   to={item.path}
                   className={`flex items-center space-x-2 py-2 ${
                     isActive(item.path)
-                      ? "text-wellura-400 font-medium"
+                      ? "text-wellura-500 font-medium"
                       : "text-muted-foreground"
                   }`}
                   onClick={() => setIsMenuOpen(false)}

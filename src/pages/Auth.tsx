@@ -1,5 +1,6 @@
+
 import { useState, useContext, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const location = useLocation();
@@ -33,19 +35,30 @@ const Auth = () => {
     
     try {
       if (!email || !password) {
-        toast.error("Please fill in all required fields");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please fill in all required fields"
+        });
         return;
       }
       
       if (mode === "signup" && password !== confirmedPassword) {
-        toast.error("Passwords do not match");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Passwords do not match"
+        });
         return;
       }
       
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (mode === "signup") {
-        toast.success("Account created successfully!");
+        toast({
+          title: "Success",
+          description: "Account created successfully!"
+        });
       }
       
       setIsLoggedIn(true);
@@ -54,7 +67,11 @@ const Auth = () => {
       navigate("/profile-setup");
       
     } catch (error) {
-      toast.error("Authentication failed. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Authentication failed. Please try again."
+      });
       console.error("Auth error:", error);
     } finally {
       setIsLoading(false);
@@ -62,10 +79,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex flex-col bg-background p-4">
+      <div className="w-full max-w-md mx-auto">
+        <div className="mb-4">
+          <Link to="/" className="back-button">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Link>
+        </div>
+        
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-wellura-500 mb-2">Wellura Brasil</h1>
+          <h1 className="text-3xl font-bold text-wellura-500 mb-2">Wellura App</h1>
           <p className="text-muted-foreground">Your personalized wellness journey</p>
         </div>
         

@@ -16,35 +16,35 @@
     --popover: 0 0% 100%;
     --popover-foreground: 260 7% 8%;
 
-    --primary: 260 72% 75%;
+    --primary: 260 42% 45%;
     --primary-foreground: 258 100% 98%;
 
-    --secondary: 260 5% 96%;
-    --secondary-foreground: 260 65% 30%;
+    --secondary: 220 65% 45%;
+    --secondary-foreground: 258 100% 98%;
 
     --muted: 260 5% 96%;
     --muted-foreground: 260 5% 40%;
 
     --accent: 258 87% 93%;
-    --accent-foreground: 260 65% 30%;
+    --accent-foreground: 260 42% 45%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 260 6% 90%;
     --input: 260 6% 90%;
-    --ring: 260 72% 75%;
+    --ring: 260 42% 45%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 260 72% 75%; 
+    --sidebar-background: 260 42% 45%; 
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 260 72% 75%;
+    --sidebar-primary-foreground: 260 42% 45%;
     --sidebar-accent: 258 87% 93%;
-    --sidebar-accent-foreground: 260 65% 30%;
+    --sidebar-accent-foreground: 260 42% 45%;
     --sidebar-border: 258 100% 90%;
-    --sidebar-ring: 260 72% 75%;
+    --sidebar-ring: 260 42% 45%;
   }
 
   .dark {
@@ -57,10 +57,10 @@
     --popover: 260 5% 10%;
     --popover-foreground: 258 100% 98%;
 
-    --primary: 260 72% 75%;
+    --primary: 260 42% 45%;
     --primary-foreground: 258 100% 98%;
 
-    --secondary: 260 5% 15%;
+    --secondary: 220 65% 45%;
     --secondary-foreground: 258 100% 98%;
 
     --muted: 260 5% 15%;
@@ -74,7 +74,7 @@
 
     --border: 260 5% 15%;
     --input: 260 5% 15%;
-    --ring: 260 72% 75%;
+    --ring: 260 42% 45%;
   }
 }
 
@@ -123,5 +123,9 @@
   
   .gradient-text {
     @apply bg-gradient-wellura bg-clip-text text-transparent;
+  }
+  
+  .back-button {
+    @apply flex items-center gap-1 text-white hover:opacity-80 transition-opacity;
   }
 }

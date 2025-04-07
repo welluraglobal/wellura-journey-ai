@@ -68,16 +68,16 @@ export default {
 					100: '#EDE9FE',
 					200: '#DDD6FE',
 					300: '#C4B5FD',
-					400: '#9B87F5',
-					500: '#7E69AB',
-					600: '#6E59A5',
-					700: '#5B46A2',
-					800: '#4C3899',
+					400: '#6E59A5', // Darker, richer purple
+					500: '#5B46A2', // Deeper purple
+					600: '#4C3899', // Rich purple
+					700: '#3C2A80', // Dark purple
+					800: '#2C1C66', // Very dark purple
 					900: '#1A1F2C',
 				},
 			},
 			backgroundImage: {
-				'gradient-wellura': 'linear-gradient(135deg, #9b87f5 0%, #33C3F0 100%)',
+				'gradient-wellura': 'linear-gradient(135deg, #5B46A2 0%, #1976D2 100%)', // Darker purple to deeper blue
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
