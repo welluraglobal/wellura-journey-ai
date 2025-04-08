@@ -59,8 +59,9 @@ const Dashboard = () => {
     }
   ];
 
-  // Handle navigation function
+  // Handle navigation function with console logging for debugging
   const handleNavigate = (path: string) => {
+    console.log("Dashboard navigating to:", path);
     navigate(path);
   };
 

@@ -52,13 +52,14 @@ const NavBar = () => {
     { name: "My Plan", path: "/plan-generator", icon: BarChart },
     { name: "AI Consultant", path: "/chat", icon: MessageCircle },
     { name: "Profile", path: "/profile-setup", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
+    // Removed Settings from main nav to avoid 404 errors
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
   // Handle navigation for both links and buttons
   const handleNavigation = (path: string) => {
+    console.log("Navigating to:", path);
     setIsMenuOpen(false);
     navigate(path);
   };
@@ -77,9 +78,12 @@ const NavBar = () => {
           </Button>
         )}
         
-        <Link to="/dashboard" className="text-xl font-bold text-white mr-2">
+        <button 
+          onClick={() => navigate("/dashboard")} 
+          className="text-xl font-bold text-white mr-2 bg-transparent border-0 cursor-pointer"
+        >
           Wellura App
-        </Link>
+        </button>
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center ml-10 space-x-6">
@@ -113,13 +117,26 @@ const NavBar = () => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <button onClick={() => navigate('/profile-setup')} className="w-full text-left">Profile</button>
+              <button 
+                onClick={() => handleNavigation('/profile-setup')} 
+                className="w-full text-left cursor-pointer"
+              >
+                Profile
+              </button>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <button onClick={() => navigate('/settings')} className="w-full text-left">Settings</button>
+              <button 
+                onClick={() => navigate('/dashboard')} 
+                className="w-full text-left cursor-pointer"
+              >
+                Dashboard
+              </button>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+            <DropdownMenuItem 
+              onClick={handleLogout} 
+              className="text-destructive focus:text-destructive cursor-pointer"
+            >
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
