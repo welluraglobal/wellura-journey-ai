@@ -12,7 +12,7 @@ const BackButton = ({ fallbackPath = "/", className = "" }: BackButtonProps) => 
   const navigate = useNavigate();
 
   const handleBack = () => {
-    // Navigate directly to the fallback path instead of trying to go back
+    // Navigate directly to the fallback path
     navigate(fallbackPath);
   };
 
@@ -24,7 +24,7 @@ const BackButton = ({ fallbackPath = "/", className = "" }: BackButtonProps) => 
       className={`flex items-center gap-2 mb-4 ${className}`}
     >
       <ArrowLeft className="h-4 w-4" />
-      <span>Voltar</span>
+      <span>Back</span>
     </Button>
   );
 };

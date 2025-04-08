@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,7 +19,6 @@ import ResetPassword from "./pages/ResetPassword";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
 
-// Create a context to store and share user authentication state and profile data
 export const UserContext = createContext({
   isLoggedIn: false,
   hasProfile: false,
@@ -151,6 +149,7 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route path="/confirm-email" element={<ConfirmEmail />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              
               <Route
                 path="/profile-setup"
                 element={
