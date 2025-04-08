@@ -1,4 +1,5 @@
 
+
 project_id = "wahxxjnvgexfgebjzwqj"
 
 [api]
@@ -34,3 +35,4 @@ verify_jwt = true
 
 [functions.google-places-search]
 verify_jwt = true
+

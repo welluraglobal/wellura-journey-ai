@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,14 +24,24 @@ const ResetPassword = () => {
     // Verify that the token is present and valid
     const verifyToken = async () => {
       const token = searchParams.get("token");
+      
       if (!token) {
+        console.error("No token found in URL");
         setStatus("error");
         setMessage("Invalid or missing reset token. Please request a new password reset link.");
         return;
       }
-
-      // Just check if the token is present, actual verification happens on submit
-      setTokenValid(true);
+      
+      console.log("Token found in URL:", token);
+      
+      try {
+        // Just check if the token is present, actual verification happens on submit
+        setTokenValid(true);
+      } catch (error) {
+        console.error("Token verification error:", error);
+        setStatus("error");
+        setMessage("There was an error verifying your reset token. Please request a new password reset link.");
+      }
     };
 
     verifyToken();
@@ -64,6 +75,8 @@ const ResetPassword = () => {
         setIsLoading(false);
         return;
       }
+
+      console.log("Attempting to reset password with token:", token);
 
       // Update the password using the correct method from Supabase
       const { error } = await supabase.auth.updateUser({
