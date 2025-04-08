@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ProfileCard from "@/components/profile/ProfileCard";
 import MobileNavigation from "@/components/navigation/MobileNavigation";
 import DesktopNavigation from "@/components/navigation/DesktopNavigation";
-import { SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 
 const NavBar = () => {
   const { firstName, setIsLoggedIn, setHasProfile, userProfile } = useContext(UserContext);
@@ -102,21 +102,23 @@ const NavBar = () => {
         </div>
 
         <div className="md:hidden">
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsMenuOpen(true)}>
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-        </div>
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsMenuOpen(true)}>
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
 
-        <MobileNavigation 
-          isMenuOpen={isMenuOpen}
-          setIsMenuOpen={setIsMenuOpen}
-          isActive={isActive}
-          handleNavigation={handleNavigation}
-          toggleProfileCard={toggleProfileCard}
-          handleLogout={handleLogout}
-        />
+            <MobileNavigation 
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
+              isActive={isActive}
+              handleNavigation={handleNavigation}
+              toggleProfileCard={toggleProfileCard}
+              handleLogout={handleLogout}
+            />
+          </Sheet>
+        </div>
 
         {showProfileCard && (
           <div ref={profileCardRef} className="absolute top-16 right-6 z-50">
