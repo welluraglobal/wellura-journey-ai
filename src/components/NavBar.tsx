@@ -124,21 +124,11 @@ const NavBar = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <button 
-                  onClick={handleProfileNavigation} 
-                  className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
-                >
-                  Profile
-                </button>
+              <DropdownMenuItem onClick={handleProfileNavigation}>
+                Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <button 
-                  onClick={() => navigate('/dashboard')} 
-                  className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
-                >
-                  Dashboard
-                </button>
+              <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                Dashboard
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
