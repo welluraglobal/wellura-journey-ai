@@ -27,12 +27,15 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 const NavBar = () => {
-  const { firstName, setIsLoggedIn, setHasProfile } = useContext(UserContext);
+  const { firstName, setIsLoggedIn, setHasProfile, userProfile } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showProfileCard, setShowProfileCard] = useState(false);
 
   const handleLogout = () => {
     // This will be replaced with actual Supabase auth logout once integrated
@@ -65,9 +68,13 @@ const NavBar = () => {
     navigate(path);
   };
 
+  const toggleProfileCard = () => {
+    setShowProfileCard(!showProfileCard);
+  };
+
   return (
     <TooltipProvider>
-      <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
+      <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white relative">
         <div className="flex items-center">
           {location.pathname !== "/" && (
             <Button 
@@ -107,6 +114,16 @@ const NavBar = () => {
         </div>
 
         <div className="flex items-center">
+          {/* Profile Button */}
+          <Button 
+            variant="outline" 
+            className="mr-3 hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20"
+            onClick={toggleProfileCard}
+          >
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </Button>
+
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -118,7 +135,6 @@ const NavBar = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {/* Profile button removed as requested */}
               <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                 Dashboard
               </DropdownMenuItem>
@@ -155,6 +171,13 @@ const NavBar = () => {
                     <span>{item.name}</span>
                   </button>
                 ))}
+                <button
+                  onClick={toggleProfileCard}
+                  className="flex items-center space-x-2 py-2 w-full text-left text-muted-foreground"
+                >
+                  <User size={20} />
+                  <span>Profile</span>
+                </button>
                 <div className="pt-4 mt-4 border-t">
                   <Button
                     variant="destructive"
@@ -169,6 +192,66 @@ const NavBar = () => {
             </SheetContent>
           </Sheet>
         </div>
+
+        {/* Profile Card */}
+        {showProfileCard && (
+          <div className="absolute top-16 right-6 z-50">
+            <Card className="w-80 shadow-lg border-2">
+              <CardHeader className="bg-gradient-wellura text-white">
+                <CardTitle className="text-xl">
+                  <div className="flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Welcome, {firstName || "User"}!
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Your Profile Information:</p>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <span className="text-muted-foreground">Name:</span>
+                    <span className="col-span-2 font-medium">{userProfile?.first_name || "-"} {userProfile?.last_name || ""}</span>
+                    
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="col-span-2 font-medium">{userProfile?.email || "-"}</span>
+                    
+                    <span className="text-muted-foreground">Goal:</span>
+                    <span className="col-span-2 font-medium">{userProfile?.main_goal || "-"}</span>
+                    
+                    {userProfile?.age && (
+                      <>
+                        <span className="text-muted-foreground">Age:</span>
+                        <span className="col-span-2 font-medium">{userProfile?.age}</span>
+                      </>
+                    )}
+                    
+                    {userProfile?.gender && (
+                      <>
+                        <span className="text-muted-foreground">Gender:</span>
+                        <span className="col-span-2 font-medium">{userProfile?.gender}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Separator />
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => {
+                      setShowProfileCard(false);
+                      navigate("/profile-setup");
+                    }}
+                  >
+                    Edit Profile
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </nav>
     </TooltipProvider>
   );
