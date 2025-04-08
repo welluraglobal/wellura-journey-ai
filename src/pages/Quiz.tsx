@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "@/App";
+import { UserContext } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";

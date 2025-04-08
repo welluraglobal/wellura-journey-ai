@@ -1,6 +1,6 @@
 
-import { useState, useRef, useEffect, useContext } from "react";
-import { UserContext } from "@/App";
+import { useState, useEffect, useRef, useContext } from "react";
+import { UserContext } from "@/contexts/UserContext";
 import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

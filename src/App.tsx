@@ -14,8 +14,8 @@ import Chat from "@/pages/Chat";
 import NearbyGyms from "@/pages/NearbyGyms";
 import FindProfessionals from "@/pages/FindProfessionals";
 import PlanGenerator from "@/pages/PlanGenerator";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { UserProvider } from "./contexts/UserContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { useEffect } from "react";
 
 // Create a client

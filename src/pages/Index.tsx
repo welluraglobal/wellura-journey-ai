@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useContext } from "react";
-import { UserContext } from "@/App";
+import { UserContext } from "@/contexts/UserContext";
 import { Link, useNavigate } from "react-router-dom";
 
 const Index = () => {

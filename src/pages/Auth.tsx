@@ -1,7 +1,6 @@
-
-import { useState, useContext, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { UserContext } from "@/App";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { UserContext } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,11 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import BackButton from "@/components/BackButton";
 
 const Auth = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const defaultMode = queryParams.get("mode") === "login" ? "login" : "signup";
-  
-  const [mode, setMode] = useState<"login" | "signup">(defaultMode);
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
@@ -31,11 +26,12 @@ const Auth = () => {
   
   const { setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
-    const newMode = queryParams.get("mode") === "login" ? "login" : "signup";
+    const newMode = searchParams.get("mode") === "login" ? "login" : "signup";
     setMode(newMode);
-  }, [location.search]);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +161,6 @@ const Auth = () => {
 
     setIsResetEmailSending(true);
     try {
-      // Fixed: Use absolute URL for reset link
       const currentUrl = window.location.origin;
       const resetUrl = `${currentUrl}/reset-password`;
       console.log("Reset URL:", resetUrl);

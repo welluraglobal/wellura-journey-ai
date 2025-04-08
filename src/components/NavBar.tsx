@@ -1,7 +1,7 @@
 
 import { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { UserContext } from "@/App";
+import { UserContext } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Menu } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
