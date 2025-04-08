@@ -86,6 +86,7 @@ const Auth = () => {
         });
         
       } else {
+        console.log("Logging in with:", email, "password length:", password.length);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -94,10 +95,13 @@ const Auth = () => {
         if (error) {
           throw error;
         }
+        
+        console.log("Login successful, data:", data);
       }
       
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log("Session obtained after login:", session);
         setIsLoggedIn(true);
         localStorage.setItem("wellura-authenticated", "true");
         

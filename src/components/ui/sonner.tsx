@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "sonner"
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Remove the theme dependency for now
   return (
     <Sonner
       className="toaster group"

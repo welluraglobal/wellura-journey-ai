@@ -141,7 +141,6 @@ const App = () => {
           }}
         >
           <BrowserRouter>
-            {/* Only include one Toaster component */}
             <Toaster />
             <Routes>
               <Route path="/" element={<Index />} />
