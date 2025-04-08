@@ -190,6 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign out functionality
   const signOut = async () => {
     try {
+      console.log("Signing out user...");
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -199,13 +200,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: error.message,
           variant: "destructive",
         });
-        return;
+        throw error;
       }
       
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out",
       });
+
+      return;
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast({
@@ -213,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "An error occurred during sign out",
         variant: "destructive",
       });
+      throw error;
     }
   };
 

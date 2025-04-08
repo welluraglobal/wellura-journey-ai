@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,13 @@ const Auth = () => {
   const [isResetEmailSending, setIsResetEmailSending] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { signIn, signUp, authState } = useAuth();
+  const { signIn, signUp, authState, requestPasswordReset } = useAuth();
 
   console.log("Auth component rendered with mode:", mode);
   console.log("Search params:", Object.fromEntries(searchParams.entries()));
+  console.log("Current location:", location.pathname + location.search);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -75,6 +77,7 @@ const Auth = () => {
           return;
         }
         
+        console.log("Attempting to sign up with:", { email, firstName, lastName });
         const { error, data } = await signUp(email, password, {
           first_name: firstName,
           last_name: lastName,
@@ -127,7 +130,7 @@ const Auth = () => {
 
     setIsResetEmailSending(true);
     try {
-      const { error } = await useAuth().requestPasswordReset(resetEmail);
+      const { error } = await requestPasswordReset(resetEmail);
 
       if (error) {
         throw error;
@@ -167,6 +170,10 @@ const Auth = () => {
           onValueChange={(value) => {
             console.log("Tabs value changing to:", value);
             setMode(value as "login" | "signup");
+            // Update URL to reflect the current mode
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('mode', value);
+            navigate(`/auth?${newParams.toString()}`, { replace: true });
           }} 
           className="w-full"
         >
@@ -287,7 +294,13 @@ const Auth = () => {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto" 
-                        onClick={() => setMode("signup")}
+                        onClick={() => {
+                          setMode("signup");
+                          // Update URL to reflect the current mode
+                          const newParams = new URLSearchParams(searchParams);
+                          newParams.set('mode', 'signup');
+                          navigate(`/auth?${newParams.toString()}`, { replace: true });
+                        }}
                       >
                         Sign up
                       </Button>
@@ -301,7 +314,13 @@ const Auth = () => {
                     <Button 
                       variant="link" 
                       className="p-0 h-auto" 
-                      onClick={() => setMode("login")}
+                      onClick={() => {
+                        setMode("login");
+                        // Update URL to reflect the current mode
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('mode', 'login');
+                        navigate(`/auth?${newParams.toString()}`, { replace: true });
+                      }}
                     >
                       Login
                     </Button>

@@ -9,23 +9,39 @@ import ProfileCard from "@/components/profile/ProfileCard";
 import MobileNavigation from "@/components/navigation/MobileNavigation";
 import DesktopNavigation from "@/components/navigation/DesktopNavigation";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const NavBar = () => {
   const { firstName, setIsLoggedIn, setHasProfile, userProfile } = useContext(UserContext);
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const profileCardRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem("wellura-authenticated");
-    localStorage.removeItem("wellura-has-profile");
-    localStorage.removeItem("wellura-first-name");
-    setIsLoggedIn(false);
-    setHasProfile(false);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      // Call the signOut function from AuthContext
+      await signOut();
+      // Update local state after successful signout
+      setIsLoggedIn(false);
+      setHasProfile(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "There was a problem signing out. Please try again."
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const handleBack = () => {
@@ -98,6 +114,7 @@ const NavBar = () => {
             handleNavigation={handleNavigation}
             toggleProfileCard={toggleProfileCard}
             handleLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
           />
         </div>
 
@@ -116,6 +133,7 @@ const NavBar = () => {
               handleNavigation={handleNavigation}
               toggleProfileCard={toggleProfileCard}
               handleLogout={handleLogout}
+              isLoggingOut={isLoggingOut}
             />
           </Sheet>
         </div>

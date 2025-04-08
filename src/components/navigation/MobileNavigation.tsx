@@ -12,6 +12,7 @@ interface MobileNavigationProps {
   handleNavigation: (path: string) => void;
   toggleProfileCard: () => void;
   handleLogout: () => void;
+  isLoggingOut?: boolean;
 }
 
 const MobileNavigation: React.FC<MobileNavigationProps> = ({
@@ -21,6 +22,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   handleNavigation,
   toggleProfileCard,
   handleLogout,
+  isLoggingOut = false,
 }) => {
   return (
     <SheetContent>
@@ -51,9 +53,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
             variant="destructive"
             className="w-full justify-start"
             onClick={handleLogout}
+            disabled={isLoggingOut}
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </div>

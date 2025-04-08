@@ -11,6 +11,7 @@ interface DesktopNavigationProps {
   handleNavigation: (path: string) => void;
   toggleProfileCard: () => void;
   handleLogout: () => void;
+  isLoggingOut?: boolean;
 }
 
 const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
@@ -19,6 +20,7 @@ const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
   handleNavigation,
   toggleProfileCard,
   handleLogout,
+  isLoggingOut = false,
 }) => {
   return (
     <>
@@ -40,7 +42,6 @@ const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
       </div>
 
       <div className="flex items-center ml-auto">
-        {/* Removed duplicate Profile button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
@@ -61,8 +62,9 @@ const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
             <DropdownMenuItem 
               onClick={handleLogout} 
               className="text-destructive focus:text-destructive cursor-pointer"
+              disabled={isLoggingOut}
             >
-              Logout
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
