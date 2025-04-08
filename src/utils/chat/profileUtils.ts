@@ -18,3 +18,21 @@ export const fetchUserProfile = async (userId: string) => {
   
   return data;
 };
+
+// Function to extract age, weight, height from quiz_data
+export const extractProfileData = (profile: any) => {
+  if (!profile) return null;
+  
+  const quizData = profile.quiz_data || {};
+  
+  return {
+    firstName: profile.first_name || '',
+    lastName: profile.last_name || '',
+    email: profile.email || '',
+    mainGoal: profile.main_goal || '',
+    age: quizData.age || '',
+    gender: quizData.gender || '',
+    height: quizData.height || '',
+    weight: quizData.weight || '',
+  };
+};
