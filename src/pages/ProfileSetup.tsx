@@ -1,4 +1,3 @@
-
 import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -32,40 +31,50 @@ const ProfileSetup = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   
-  const { setHasProfile, setFirstName } = useContext(UserContext);
+  const { setHasProfile, setFirstName, userProfile, setUserProfile } = useContext(UserContext);
   const navigate = useNavigate();
 
-  // Get the current user ID when the component mounts
+  // Get the current user ID and check for existing profile
   useEffect(() => {
-    const fetchUserId = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data && data.user) {
-        setUserId(data.user.id);
-        
-        // Check if user already has a profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (data && data.user) {
+          setUserId(data.user.id);
           
-        if (profile && !error) {
-          // If profile exists and has data, navigate to dashboard
-          if (profile.first_name) {
-            setHasProfile(true);
-            setFirstName(profile.first_name);
-            localStorage.setItem("wellura-has-profile", "true");
-            localStorage.setItem("wellura-first-name", profile.first_name);
-            navigate("/dashboard");
-            return;
+          // Check if user already has a profile
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (profile && !error) {
+            setIsEditMode(true);
+            // Fill the form with existing profile data
+            setProfileData({
+              fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+              age: profile.age?.toString() || '',
+              gender: profile.gender || '',
+              height: profile.height?.toString() || '',
+              weight: profile.weight?.toString() || '',
+              goal: profile.main_goal || '',
+            });
           }
         }
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    fetchUserId();
-  }, [navigate, setHasProfile, setFirstName]);
+    fetchUserData();
+  }, []);
   
   const updateField = (field: keyof ProfileData, value: string) => {
     setProfileData((prev) => ({
@@ -117,8 +126,8 @@ const ProfileSetup = () => {
       const firstName = profileData.fullName.split(" ")[0];
       const lastName = profileData.fullName.split(" ").slice(1).join(" ");
       
-      // Save to Supabase profiles table with ALL profile fields
-      const { error } = await supabase
+      // Save to Supabase profiles table
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           first_name: firstName,
@@ -136,7 +145,19 @@ const ProfileSetup = () => {
         throw error;
       }
       
-      // Set profile completion state and store first name for personalization
+      // Fetch updated profile data
+      const { data: updatedProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileError) {
+        throw profileError;
+      }
+      
+      // Update context with new profile data
+      setUserProfile(updatedProfile);
       setHasProfile(true);
       setFirstName(firstName);
       
@@ -144,7 +165,7 @@ const ProfileSetup = () => {
       localStorage.setItem("wellura-has-profile", "true");
       localStorage.setItem("wellura-first-name", firstName);
       
-      toast.success("Profile setup complete!");
+      toast.success(isEditMode ? "Profile updated successfully!" : "Profile setup complete!");
       navigate("/dashboard");
       
     } catch (error: any) {
@@ -162,9 +183,9 @@ const ProfileSetup = () => {
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-xl">
           <CardHeader>
-            <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
+            <CardTitle className="text-2xl">{isEditMode ? "Edit Your Profile" : "Complete Your Profile"}</CardTitle>
             <CardDescription>
-              Tell us about yourself so we can personalize your wellness journey
+              {isEditMode ? "Update your profile information" : "Tell us about yourself so we can personalize your wellness journey"}
             </CardDescription>
           </CardHeader>
           
@@ -274,7 +295,7 @@ const ProfileSetup = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Saving..." : "Save Profile"}
+                {isLoading ? "Saving..." : (isEditMode ? "Update Profile" : "Save Profile")}
               </Button>
             </CardFooter>
           </form>

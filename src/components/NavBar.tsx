@@ -1,4 +1,3 @@
-
 import { useState, useContext, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -40,7 +39,6 @@ const NavBar = () => {
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleLogout = () => {
-    // This will be replaced with actual Supabase auth logout once integrated
     localStorage.removeItem("wellura-authenticated");
     localStorage.removeItem("wellura-has-profile");
     localStorage.removeItem("wellura-first-name");
@@ -57,13 +55,10 @@ const NavBar = () => {
     { name: "Dashboard", path: "/dashboard", icon: Home },
     { name: "My Plan", path: "/plan-generator", icon: BarChart },
     { name: "AI Consultant", path: "/chat", icon: MessageCircle },
-    // Removed Profile from the main nav items as requested
-    // Removed Settings from main nav to avoid 404 errors
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Handle navigation for both links and buttons
   const handleNavigation = (path: string) => {
     console.log("Navigating to:", path);
     setIsMenuOpen(false);
@@ -75,12 +70,13 @@ const NavBar = () => {
   };
 
   const handleEditProfile = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop event propagation
+    e.stopPropagation();
     setShowProfileCard(false);
-    navigate("/profile-setup");
+    setTimeout(() => {
+      navigate("/profile-setup");
+    }, 10);
   };
 
-  // Handle clicks outside the profile card
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -121,7 +117,6 @@ const NavBar = () => {
             Wellura App
           </button>
           
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center ml-10 space-x-6">
             {navItems.map((item) => (
               <button
@@ -141,7 +136,6 @@ const NavBar = () => {
         </div>
 
         <div className="flex items-center">
-          {/* Profile Button */}
           <Button 
             ref={profileButtonRef}
             variant="outline" 
@@ -152,7 +146,6 @@ const NavBar = () => {
             Profile
           </Button>
 
-          {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
@@ -176,7 +169,6 @@ const NavBar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Mobile Menu Button */}
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden text-white">
@@ -221,7 +213,6 @@ const NavBar = () => {
           </Sheet>
         </div>
 
-        {/* Profile Card */}
         {showProfileCard && (
           <div ref={profileCardRef} className="absolute top-16 right-6 z-50">
             <Card className="w-80 shadow-lg border-2">
