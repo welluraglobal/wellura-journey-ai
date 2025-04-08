@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { listeners, memoryState, dispatch } from "./toast-state";
+import { dispatch, listeners, memoryState } from "./toast-state";
 import { actionTypes, ToastState } from "./types";
 import { toast } from "./toast-actions";
 
@@ -15,7 +15,7 @@ export function useToast() {
         listeners.splice(index, 1);
       }
     };
-  }, [state]);
+  }, []);
 
   return {
     ...state,
@@ -25,4 +25,3 @@ export function useToast() {
 }
 
 export { toast };
-export type { Toast } from "./types";

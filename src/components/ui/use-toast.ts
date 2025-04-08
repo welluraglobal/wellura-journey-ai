@@ -1,3 +1,5 @@
 
-// Re-export from the hooks folder
-export { useToast, toast, type Toast } from "@/hooks/use-toast";
+import { useToast, toast } from "@/hooks/use-toast";
+import type { Toast, ToastActionElement } from "@/components/ui/toast";
+
+export { useToast, toast, type Toast, type ToastActionElement };

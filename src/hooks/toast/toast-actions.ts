@@ -1,5 +1,4 @@
 
-import { toast as sonnerToast } from "sonner";
 import { genId, dispatch } from "./toast-state";
 import { actionTypes, ToastOptions } from "./types";
 
