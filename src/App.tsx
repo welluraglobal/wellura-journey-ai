@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -13,13 +14,26 @@ import Chat from "@/pages/Chat";
 import NearbyGyms from "@/pages/NearbyGyms";
 import FindProfessionals from "@/pages/FindProfessionals";
 import PlanGenerator from "@/pages/PlanGenerator";
-import { useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { UserProvider } from "./contexts/UserContext";
 import { useEffect } from "react";
 
 // Create a client
 const queryClient = new QueryClient();
 
-function App() {
+// App wrapper to provide all contexts
+function AppWrapper() {
+  return (
+    <AuthProvider>
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
+    </AuthProvider>
+  );
+}
+
+// Main app content with authentication check
+function AppContent() {
   const { authState } = useAuth();
   const isLoggedIn = authState.isAuthenticated;
 
@@ -31,7 +45,6 @@ function App() {
     <div>
       <QueryClientProvider
         client={queryClient}
-        contextSharing={true}
       >
         <BrowserRouter>
           {/* Use only one toast provider */}
@@ -56,4 +69,5 @@ function App() {
   );
 }
 
-export default App;
+// Export the wrapped app
+export default AppWrapper;
