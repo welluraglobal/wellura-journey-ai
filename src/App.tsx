@@ -14,6 +14,7 @@ import Quiz from "./pages/Quiz";
 import NearbyGyms from "./pages/NearbyGyms";
 import FindProfessionals from "./pages/FindProfessionals";
 import NotFound from "./pages/NotFound";
+import ConfirmationScreens from "./components/ConfirmationScreens";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -157,11 +158,29 @@ const App = () => {
                 }
               />
               <Route
+                path="/confirmations"
+                element={
+                  isLoggedIn ? (
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <Navigate to="/dashboard" replace />
+                    ) : (
+                      <ConfirmationScreens />
+                    )
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )
+                }
+              />
+              <Route
                 path="/dashboard"
                 element={
                   isLoggedIn ? (
                     hasProfile ? (
-                      <Dashboard />
+                      userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                        <Dashboard />
+                      ) : (
+                        <Navigate to="/confirmations" replace />
+                      )
                     ) : (
                       <Navigate to="/profile-setup" replace />
                     )
@@ -174,7 +193,11 @@ const App = () => {
                 path="/plan-generator"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <PlanGenerator />
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <PlanGenerator />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
@@ -184,7 +207,11 @@ const App = () => {
                 path="/quiz"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <Quiz />
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <Quiz />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
@@ -194,7 +221,11 @@ const App = () => {
                 path="/chat"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <Chat />
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <Chat />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
@@ -204,7 +235,11 @@ const App = () => {
                 path="/nearby-gyms"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <NearbyGyms />
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <NearbyGyms />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )
@@ -214,7 +249,11 @@ const App = () => {
                 path="/find-professionals"
                 element={
                   isLoggedIn && hasProfile ? (
-                    <FindProfessionals />
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <FindProfessionals />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
                     <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
                   )

@@ -1,4 +1,3 @@
-
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -102,12 +101,22 @@ const Auth = () => {
         
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('first_name, privacy_accepted, health_disclaimer_accepted')
           .eq('id', session.user.id)
           .single();
           
-        if (profile && profile.first_name) {
-          navigate("/dashboard");
+        if (profile) {
+          if (!profile.privacy_accepted || !profile.health_disclaimer_accepted) {
+            if (profile.first_name) {
+              navigate("/confirmations");
+            } else {
+              navigate("/profile-setup");
+            }
+          } else if (profile.first_name) {
+            navigate("/dashboard");
+          } else {
+            navigate("/profile-setup");
+          }
         } else {
           navigate("/profile-setup");
         }

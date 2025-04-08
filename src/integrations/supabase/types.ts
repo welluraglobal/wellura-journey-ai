@@ -122,6 +122,7 @@ export type Database = {
           email_confirmed: boolean | null
           expertise: string | null
           first_name: string | null
+          health_disclaimer_accepted: boolean | null
           id: string
           last_name: string | null
           lat: number | null
@@ -130,6 +131,7 @@ export type Database = {
           monthly_earnings: number | null
           notification_preferences: Json | null
           phone: string | null
+          privacy_accepted: boolean | null
           quiz_data: Json | null
           rating: number | null
           response_time_avg: unknown | null
@@ -156,6 +158,7 @@ export type Database = {
           email_confirmed?: boolean | null
           expertise?: string | null
           first_name?: string | null
+          health_disclaimer_accepted?: boolean | null
           id: string
           last_name?: string | null
           lat?: number | null
@@ -164,6 +167,7 @@ export type Database = {
           monthly_earnings?: number | null
           notification_preferences?: Json | null
           phone?: string | null
+          privacy_accepted?: boolean | null
           quiz_data?: Json | null
           rating?: number | null
           response_time_avg?: unknown | null
@@ -190,6 +194,7 @@ export type Database = {
           email_confirmed?: boolean | null
           expertise?: string | null
           first_name?: string | null
+          health_disclaimer_accepted?: boolean | null
           id?: string
           last_name?: string | null
           lat?: number | null
@@ -198,6 +203,7 @@ export type Database = {
           monthly_earnings?: number | null
           notification_preferences?: Json | null
           phone?: string | null
+          privacy_accepted?: boolean | null
           quiz_data?: Json | null
           rating?: number | null
           response_time_avg?: unknown | null
