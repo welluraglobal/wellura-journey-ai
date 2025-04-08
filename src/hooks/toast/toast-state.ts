@@ -83,7 +83,7 @@ export const reducer = (state: ToastState, action: Action): ToastState => {
   }
 };
 
-// Initialize with a valid state object - using let instead of const so it can be modified
+// Initialize with a let instead of const to allow reassignment
 export let memoryState: ToastState = { toasts: [] };
 
 // State management
