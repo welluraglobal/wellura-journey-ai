@@ -96,28 +96,31 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
-    // Extract token on component mount
-    const token = extractTokenFromUrl();
-    
-    if (token) {
-      setAccessToken(token);
-      console.log("Token extracted and stored successfully");
-    } else {
-      setStatus("error");
-      setMessage("No reset token found. Please request a new password reset link.");
-      console.error("Failed to extract token from URL");
-    }
-    
-    // This is important - also check current session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Current session:", session ? "Active" : "None");
-      if (session) {
-        console.log("User is already authenticated, session exists");
+    // Add a small delay to ensure the hash is fully loaded
+    setTimeout(() => {
+      // Extract token on component mount
+      const token = extractTokenFromUrl();
+      
+      if (token) {
+        setAccessToken(token);
+        console.log("Token extracted and stored successfully");
+      } else {
+        setStatus("error");
+        setMessage("No reset token found. Please request a new password reset link.");
+        console.error("Failed to extract token from URL");
       }
-    };
-    
-    checkSession();
+      
+      // This is important - also check current session
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Current session:", session ? "Active" : "None");
+        if (session) {
+          console.log("User is already authenticated, session exists");
+        }
+      };
+      
+      checkSession();
+    }, 100); // Small delay to ensure hash is fully loaded
   }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
