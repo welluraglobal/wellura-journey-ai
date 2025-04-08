@@ -12,13 +12,8 @@ const BackButton = ({ fallbackPath = "/", className = "" }: BackButtonProps) => 
   const navigate = useNavigate();
 
   const handleBack = () => {
-    try {
-      // Try to go back to the previous page
-      navigate(-1);
-    } catch (error) {
-      // If there's an error (e.g., no history), navigate to the fallback path
-      navigate(fallbackPath);
-    }
+    // Navigate directly to the fallback path instead of trying to go back
+    navigate(fallbackPath);
   };
 
   return (
