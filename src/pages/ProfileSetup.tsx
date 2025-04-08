@@ -1,3 +1,4 @@
+
 import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -54,13 +55,33 @@ const ProfileSetup = () => {
             
           if (profile && !error) {
             setIsEditMode(true);
+            
+            // Get profile values with fallbacks for TypeScript
+            const firstName = profile.first_name || '';
+            const lastName = profile.last_name || '';
+            
+            // Extract numeric values from quiz_data if available, or use empty strings
+            let age = '';
+            let gender = '';
+            let height = '';
+            let weight = '';
+            
+            // Check if quiz_data exists and has the required properties
+            if (profile.quiz_data) {
+              const quizData = profile.quiz_data as Record<string, any>;
+              age = quizData.age?.toString() || '';
+              gender = quizData.gender || '';
+              height = quizData.height?.toString() || '';
+              weight = quizData.weight?.toString() || '';
+            }
+            
             // Fill the form with existing profile data
             setProfileData({
-              fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-              age: profile.age?.toString() || '',
-              gender: profile.gender || '',
-              height: profile.height?.toString() || '',
-              weight: profile.weight?.toString() || '',
+              fullName: `${firstName} ${lastName}`.trim(),
+              age,
+              gender,
+              height,
+              weight,
               goal: profile.main_goal || '',
             });
           }
@@ -126,6 +147,14 @@ const ProfileSetup = () => {
       const firstName = profileData.fullName.split(" ")[0];
       const lastName = profileData.fullName.split(" ").slice(1).join(" ");
       
+      // Prepare quiz_data object for storing the profile information
+      const quizData = {
+        age: parseInt(profileData.age),
+        gender: profileData.gender,
+        height: parseFloat(profileData.height),
+        weight: parseFloat(profileData.weight)
+      };
+      
       // Save to Supabase profiles table
       const { data, error } = await supabase
         .from('profiles')
@@ -133,10 +162,7 @@ const ProfileSetup = () => {
           first_name: firstName,
           last_name: lastName,
           main_goal: profileData.goal,
-          age: parseInt(profileData.age),
-          gender: profileData.gender,
-          height: parseFloat(profileData.height),
-          weight: parseFloat(profileData.weight),
+          quiz_data: quizData,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);

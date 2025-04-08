@@ -7,7 +7,7 @@ export const fetchUserProfile = async (userId: string) => {
   
   const { data, error } = await supabase
     .from('profiles')
-    .select('first_name, main_goal, age, gender, height, weight')
+    .select('first_name, last_name, main_goal, quiz_data, email')
     .eq('id', userId)
     .single();
     
