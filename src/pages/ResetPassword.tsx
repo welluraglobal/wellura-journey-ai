@@ -29,7 +29,7 @@ const ResetPassword = () => {
       console.log("Access token found in URL");
       setAccessToken(token);
     } else {
-      console.error("No access token found in URL");
+      console.error("No access token found in URL - params:", Object.fromEntries(searchParams.entries()));
       setStatus("error");
       setMessage("Invalid or missing reset token. Please request a new password reset link.");
     }
@@ -114,7 +114,7 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md mb-4 flex justify-start">
-        <BackButton fallbackPath="/" />
+        <BackButton fallbackPath="/auth?mode=login" />
       </div>
       
       <Card className="w-full max-w-md">
