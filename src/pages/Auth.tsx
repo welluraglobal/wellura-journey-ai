@@ -1,3 +1,4 @@
+
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -7,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, Key, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Auth = () => {
   const location = useLocation();
@@ -22,6 +24,9 @@ const Auth = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetEmailSending, setIsResetEmailSending] = useState(false);
   
   const { setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
@@ -120,6 +125,44 @@ const Auth = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!resetEmail || !resetEmail.includes('@')) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a valid email address"
+      });
+      return;
+    }
+
+    setIsResetEmailSending(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?mode=login`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for a link to reset your password"
+      });
+      setIsForgotPasswordDialogOpen(false);
+      setResetEmail("");
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to send reset email. Please try again."
+      });
+    } finally {
+      setIsResetEmailSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background p-4">
       <div className="w-full max-w-md mx-auto">
@@ -180,39 +223,51 @@ const Auth = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 {mode === "signup" && (
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmedPassword}
-                      onChange={(e) => setConfirmedPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="••••••••"
+                        value={confirmedPassword}
+                        onChange={(e) => setConfirmedPassword(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -227,16 +282,26 @@ const Auth = () => {
                 </Button>
                 
                 {mode === "login" && (
-                  <p className="text-sm text-center text-muted-foreground">
-                    Don't have an account?{" "}
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto" 
-                      onClick={() => setMode("signup")}
+                  <>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="mb-2 p-0 h-auto"
+                      onClick={() => setIsForgotPasswordDialogOpen(true)}
                     >
-                      Sign up
+                      Forgot Password?
                     </Button>
-                  </p>
+                    <p className="text-sm text-center text-muted-foreground">
+                      Don't have an account?{" "}
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto" 
+                        onClick={() => setMode("signup")}
+                      >
+                        Sign up
+                      </Button>
+                    </p>
+                  </>
                 )}
                 
                 {mode === "signup" && (
@@ -256,6 +321,42 @@ const Auth = () => {
           </Card>
         </Tabs>
       </div>
+
+      <Dialog open={isForgotPasswordDialogOpen} onOpenChange={setIsForgotPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Forgot Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="resetEmail">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="submit" 
+              onClick={handleResetPassword}
+              disabled={isResetEmailSending}
+            >
+              {isResetEmailSending ? "Sending..." : "Send Reset Link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
