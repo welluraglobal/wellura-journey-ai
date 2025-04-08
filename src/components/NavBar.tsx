@@ -26,6 +26,7 @@ import {
   LogOut,
   ArrowLeft,
 } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const NavBar = () => {
   const { firstName, setIsLoggedIn, setHasProfile } = useContext(UserContext);
@@ -71,121 +72,123 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
-      <div className="flex items-center">
-        {location.pathname !== "/" && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleBack} 
-            className="mr-2 text-white hover:bg-white/10"
+    <TooltipProvider>
+      <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
+        <div className="flex items-center">
+          {location.pathname !== "/" && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBack} 
+              className="mr-2 text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <button 
+            onClick={() => navigate("/dashboard")} 
+            className="text-xl font-bold text-white mr-2 bg-transparent border-0 cursor-pointer"
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        
-        <button 
-          onClick={() => navigate("/dashboard")} 
-          className="text-xl font-bold text-white mr-2 bg-transparent border-0 cursor-pointer"
-        >
-          Wellura App
-        </button>
-        
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center ml-10 space-x-6">
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => handleNavigation(item.path)}
-              className={`flex items-center space-x-1 ${
-                isActive(item.path)
-                  ? "text-white font-medium"
-                  : "text-white/80 hover:text-white transition-colors"
-              } bg-transparent border-0 cursor-pointer`}
-            >
-              <item.icon size={18} />
-              <span>{item.name}</span>
-            </button>
-          ))}
+            Wellura App
+          </button>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center ml-10 space-x-6">
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`flex items-center space-x-1 ${
+                  isActive(item.path)
+                    ? "text-white font-medium"
+                    : "text-white/80 hover:text-white transition-colors"
+                } bg-transparent border-0 cursor-pointer`}
+              >
+                <item.icon size={18} />
+                <span>{item.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center">
-        {/* User dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
-              <User className="h-4 w-4 mr-2" />
-              {firstName || "User"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <button 
-                onClick={handleProfileNavigation} 
-                className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
-              >
-                Profile
-              </button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <button 
-                onClick={() => navigate('/dashboard')} 
-                className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
-              >
-                Dashboard
-              </button>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={handleLogout} 
-              className="text-destructive focus:text-destructive cursor-pointer"
-            >
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Mobile Menu Button */}
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden text-white">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <div className="flex flex-col space-y-4 mt-6">
-              {navItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => handleNavigation(item.path)}
-                  className={`flex items-center space-x-2 py-2 w-full text-left ${
-                    isActive(item.path)
-                      ? "text-wellura-500 font-medium"
-                      : "text-muted-foreground"
-                  }`}
+        <div className="flex items-center">
+          {/* User dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
+                <User className="h-4 w-4 mr-2" />
+                {firstName || "User"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <button 
+                  onClick={handleProfileNavigation} 
+                  className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
                 >
-                  <item.icon size={20} />
-                  <span>{item.name}</span>
+                  Profile
                 </button>
-              ))}
-              <div className="pt-4 mt-4 border-t">
-                <Button
-                  variant="destructive"
-                  className="w-full justify-start"
-                  onClick={handleLogout}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <button 
+                  onClick={() => navigate('/dashboard')} 
+                  className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
+                  Dashboard
+                </button>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleLogout} 
+                className="text-destructive focus:text-destructive cursor-pointer"
+              >
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Mobile Menu Button */}
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden text-white">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <div className="flex flex-col space-y-4 mt-6">
+                {navItems.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`flex items-center space-x-2 py-2 w-full text-left ${
+                      isActive(item.path)
+                        ? "text-wellura-500 font-medium"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.name}</span>
+                  </button>
+                ))}
+                <div className="pt-4 mt-4 border-t">
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-start"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
               </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
+    </TooltipProvider>
   );
 };
 

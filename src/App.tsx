@@ -1,6 +1,6 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
@@ -140,172 +140,170 @@ const App = () => {
           setUserProfile
         }}
       >
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/confirm-email" element={<ConfirmEmail />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              <Route
-                path="/profile-setup"
-                element={
-                  isLoggedIn ? (
-                    <ProfileSetup />
-                  ) : (
-                    <Navigate to="/auth" replace />
-                  )
-                }
-              />
-              <Route
-                path="/confirmations"
-                element={
-                  isLoggedIn ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <Navigate to="/dashboard" replace />
-                    ) : (
-                      <ConfirmationScreens />
-                    )
-                  ) : (
-                    <Navigate to="/auth" replace />
-                  )
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  isLoggedIn ? (
-                    hasProfile ? (
-                      userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                        <Dashboard />
-                      ) : (
-                        <Navigate to="/confirmations" replace />
-                      )
-                    ) : (
-                      <Navigate to="/profile-setup" replace />
-                    )
-                  ) : (
-                    <Navigate to="/auth" replace />
-                  )
-                }
-              />
-              <Route
-                path="/plan-generator"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <PlanGenerator />
-                    ) : (
-                      <Navigate to="/confirmations" replace />
-                    )
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/quiz"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <Quiz />
-                    ) : (
-                      <Navigate to="/confirmations" replace />
-                    )
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/chat"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <Chat />
-                    ) : (
-                      <Navigate to="/confirmations" replace />
-                    )
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/nearby-gyms"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <NearbyGyms />
-                    ) : (
-                      <Navigate to="/confirmations" replace />
-                    )
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/find-professionals"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
-                      <FindProfessionals />
-                    ) : (
-                      <Navigate to="/confirmations" replace />
-                    )
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/meals"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    <Navigate to="/plan-generator" replace />
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/training"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    <Navigate to="/plan-generator" replace />
-                  ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
-                  )
-                }
-              />
-              <Route
-                path="/report"
-                element={
-                  isLoggedIn && hasProfile ? (
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/confirm-email" element={<ConfirmEmail />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            
+            <Route
+              path="/profile-setup"
+              element={
+                isLoggedIn ? (
+                  <ProfileSetup />
+                ) : (
+                  <Navigate to="/auth" replace />
+                )
+              }
+            />
+            <Route
+              path="/confirmations"
+              element={
+                isLoggedIn ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
                     <Navigate to="/dashboard" replace />
                   ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                    <ConfirmationScreens />
                   )
-                }
-              />
-              <Route
-                path="/support"
-                element={
-                  isLoggedIn && hasProfile ? (
-                    <Navigate to="/chat" replace />
+                ) : (
+                  <Navigate to="/auth" replace />
+                )
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                isLoggedIn ? (
+                  hasProfile ? (
+                    userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                      <Dashboard />
+                    ) : (
+                      <Navigate to="/confirmations" replace />
+                    )
                   ) : (
-                    <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                    <Navigate to="/profile-setup" replace />
                   )
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+                ) : (
+                  <Navigate to="/auth" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan-generator"
+              element={
+                isLoggedIn && hasProfile ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                    <PlanGenerator />
+                  ) : (
+                    <Navigate to="/confirmations" replace />
+                  )
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/quiz"
+              element={
+                isLoggedIn && hasProfile ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                    <Quiz />
+                  ) : (
+                    <Navigate to="/confirmations" replace />
+                  )
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                isLoggedIn && hasProfile ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                    <Chat />
+                  ) : (
+                    <Navigate to="/confirmations" replace />
+                  )
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/nearby-gyms"
+              element={
+                isLoggedIn && hasProfile ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                    <NearbyGyms />
+                  ) : (
+                    <Navigate to="/confirmations" replace />
+                  )
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/find-professionals"
+              element={
+                isLoggedIn && hasProfile ? (
+                  userProfile?.privacy_accepted && userProfile?.health_disclaimer_accepted ? (
+                    <FindProfessionals />
+                  ) : (
+                    <Navigate to="/confirmations" replace />
+                  )
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/meals"
+              element={
+                isLoggedIn && hasProfile ? (
+                  <Navigate to="/plan-generator" replace />
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/training"
+              element={
+                isLoggedIn && hasProfile ? (
+                  <Navigate to="/plan-generator" replace />
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                isLoggedIn && hasProfile ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                isLoggedIn && hasProfile ? (
+                  <Navigate to="/chat" replace />
+                ) : (
+                  <Navigate to={isLoggedIn ? "/profile-setup" : "/auth"} replace />
+                )
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </UserContext.Provider>
     </QueryClientProvider>
   );
