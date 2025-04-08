@@ -166,25 +166,23 @@ const ResetPassword = () => {
         console.log("Direct update approach failed:", directUpdateError);
       }
 
-      // 2. Try with OTP verification if direct update failed
+      // 2. Try with the correct recovery flow approach
       if (!resetSuccessful) {
         try {
-          console.log("Trying OTP verification approach with token:", accessToken);
-          // Fixed: Use the correct parameter structure for verifyOtp
-          const { data, error } = await supabase.auth.verifyOtp({
-            type: 'recovery',
-            token_hash: accessToken,
-            new_password: password
+          console.log("Trying recovery flow with token:", accessToken);
+          // Changed: Use the correct resetPasswordForEmail flow
+          const { error } = await supabase.auth.resetPasswordForEmail(password, {
+            token: accessToken
           });
 
           if (!error) {
-            console.log("Password reset successful with OTP verification:", data);
+            console.log("Password reset successful with recovery flow");
             resetSuccessful = true;
           } else {
-            console.error("OTP verification failed:", error);
+            console.error("Recovery flow failed:", error);
           }
-        } catch (otpError) {
-          console.error("OTP approach failed:", otpError);
+        } catch (recoveryError) {
+          console.error("Recovery approach failed:", recoveryError);
         }
       }
 
@@ -215,6 +213,40 @@ const ResetPassword = () => {
           }
         } catch (sessionError) {
           console.error("Session approach failed:", sessionError);
+        }
+      }
+
+      // 4. Try with the standard recovery flow
+      if (!resetSuccessful) {
+        try {
+          console.log("Trying standard recovery flow");
+          // Get the type parameter from URL to determine if it's a recovery flow
+          const type = searchParams.get("type");
+          
+          if (type === "recovery") {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: accessToken,
+              type: 'recovery',
+            });
+            
+            if (!error) {
+              // After verification, update the password
+              const { error: updateError } = await supabase.auth.updateUser({
+                password: password
+              });
+              
+              if (!updateError) {
+                console.log("Password updated successfully with verification approach");
+                resetSuccessful = true;
+              } else {
+                console.error("Error updating password after verification:", updateError);
+              }
+            } else {
+              console.error("Recovery verification failed:", error);
+            }
+          }
+        } catch (verificationError) {
+          console.error("Verification approach failed:", verificationError);
         }
       }
 
