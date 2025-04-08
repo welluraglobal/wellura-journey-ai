@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,11 +65,9 @@ const ResetPassword = () => {
         return;
       }
 
-      // Update the password
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type: "recovery",
-        new_password: password,
+      // Update the password using the correct method from Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: password
       });
 
       if (error) {
