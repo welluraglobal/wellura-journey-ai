@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,93 +20,30 @@ const ResetPassword = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Improved function to extract token from various possible sources
   const extractTokenFromUrl = () => {
-    // Log full URL and parameters for debugging
-    console.log("RESET PASSWORD PAGE LOADED");
-    console.log("Current URL:", window.location.href);
-    console.log("Search params:", Object.fromEntries(searchParams.entries()));
-    console.log("URL hash:", window.location.hash);
-    
-    // Check for error in URL
-    const error = searchParams.get("error");
-    const errorCode = searchParams.get("error_code");
-    const errorDescription = searchParams.get("error_description");
-    
-    if (error || errorCode || errorDescription) {
-      console.log("Error detected in URL:", { error, errorCode, errorDescription });
-      setStatus("error");
-      setMessage(errorDescription?.replace(/\+/g, ' ') || "The reset link is invalid or has expired. Please request a new password reset link.");
-      return null;
-    }
-    
-    // Check for access_token directly in hash (from email link)
-    if (window.location.hash.includes("access_token=")) {
-      const hash = window.location.hash.substring(1);
-      const tokenFromHash = new URLSearchParams(hash).get("access_token");
-      if (tokenFromHash) {
-        console.log("✅ Token extracted from hash:", tokenFromHash);
-        return tokenFromHash;
-      }
-    }
-    
-    // First try to get token directly from URL query parameters
-    const token = searchParams.get("token") || 
-                 searchParams.get("access_token") || 
-                 searchParams.get("t");
-    
+    const hash = window.location.hash.substring(1); // remove o "#"
+    const params = new URLSearchParams(hash);
+
+    const token = params.get("access_token") || params.get("token");
+
     if (token) {
-      console.log("Token found in URL parameters:", token);
+      console.log("✅ Token capturado do hash da URL:", token);
       return token;
     }
-    
-    // Then try to get it from URL fragment (hash)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const hashToken = hashParams.get("token") || 
-                     hashParams.get("access_token") || 
-                     hashParams.get("t");
-    
-    if (hashToken) {
-      console.log("Token found in URL hash:", hashToken);
-      return hashToken;
-    }
-    
-    // Check for Supabase recovery flow
-    const type = searchParams.get("type");
-    if (type === "recovery") {
-      const recoveryToken = searchParams.get("token");
-      if (recoveryToken) {
-        console.log("Recovery token found:", recoveryToken);
-        return recoveryToken;
-      }
-    }
-    
-    // Try to extract token from the full URL if it contains 'token='
-    const fullUrl = window.location.href;
-    const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
-    if (tokenMatch && tokenMatch[1]) {
-      console.log("Token extracted from URL pattern:", tokenMatch[1]);
-      return tokenMatch[1];
-    }
-    
-    // If we got here, no token was found
-    console.log("No token found in URL");
+
     return null;
   };
 
   useEffect(() => {
-    // Add a small delay to ensure the hash is fully loaded
     setTimeout(() => {
-      // Extract token on component mount
       const token = extractTokenFromUrl();
-      
+
       if (token) {
         setAccessToken(token);
-        console.log("Token extracted and stored successfully");
+        setStatus("ready");
       } else {
         setStatus("error");
-        setMessage("No reset token found. Please request a new password reset link.");
-        console.error("Failed to extract token from URL");
+        setMessage("Reset token not found. Please request a new link.");
       }
       
       // This is important - also check current session
@@ -120,8 +56,8 @@ const ResetPassword = () => {
       };
       
       checkSession();
-    }, 100); // Small delay to ensure hash is fully loaded
-  }, [searchParams]);
+    }, 300); // pequeno delay para garantir que o hash esteja acessível
+  }, []);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
