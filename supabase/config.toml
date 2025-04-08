@@ -33,7 +33,11 @@ additional_redirect_urls = [
   "https://welluraapp.com/auth/verify*",
   "https://welluraapp.com/reset-password*",
   "https://welluraapp.com/reset-password?*",
-  "https://welluraapp.com/reset-password#*"
+  "https://welluraapp.com/reset-password#*",
+  "https://welluraapp.com/reset-password?token=*",
+  "https://welluraapp.com/reset-password?type=recovery&token=*",
+  "http://localhost:5173/reset-password?token=*",
+  "http://localhost:5173/reset-password?type=recovery&token=*"
 ]
 
 [storage]

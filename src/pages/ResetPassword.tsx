@@ -21,28 +21,29 @@ const ResetPassword = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Utility function to extract token from various possible sources
+  // Improved function to extract token from various possible sources
   const extractTokenFromUrl = () => {
-    console.log("Extracting token from URL...");
+    // Log full URL and parameters for debugging
+    console.log("RESET PASSWORD PAGE LOADED");
     console.log("Current URL:", window.location.href);
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     console.log("URL hash:", window.location.hash);
     
     // Check for token in URL query parameters
     const token = searchParams.get("token") || 
-                  searchParams.get("access_token") || 
-                  searchParams.get("t");
+                 searchParams.get("access_token") || 
+                 searchParams.get("t");
     
     if (token) {
       console.log("Token found in URL parameters:", token);
       return token;
     }
     
-    // Check for token in URL hash
+    // Check for token in URL hash (some auth providers use hash-based tokens)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const hashToken = hashParams.get("token") || 
-                      hashParams.get("access_token") || 
-                      hashParams.get("t");
+                     hashParams.get("access_token") || 
+                     hashParams.get("t");
     
     if (hashToken) {
       console.log("Token found in URL hash:", hashToken);
@@ -64,6 +65,7 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
+    // Extract token on component mount
     const token = extractTokenFromUrl();
     
     if (token) {
@@ -74,6 +76,17 @@ const ResetPassword = () => {
       setMessage("No reset token found. Please request a new password reset link.");
       console.error("Failed to extract token from URL");
     }
+    
+    // This is important - also check current session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Current session:", session ? "Active" : "None");
+      if (session) {
+        console.log("User is already authenticated, session exists");
+      }
+    };
+    
+    checkSession();
   }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -108,17 +121,17 @@ const ResetPassword = () => {
 
       // First approach: try to update user directly with the token
       try {
+        console.log("Trying direct password update approach");
         const { error } = await supabase.auth.updateUser({
           password: password
-        }, {
-          emailRedirectTo: window.location.origin + "/auth?mode=login"
         });
         
         if (error) {
-          console.log("Direct update failed, trying with session:", error.message);
+          console.log("Direct update failed:", error.message);
           throw error; // Proceed to next approach
         } else {
           // Success with direct update
+          console.log("Password updated successfully with direct approach");
           setStatus("success");
           setMessage("Your password has been reset successfully!");
           toast({
@@ -137,6 +150,7 @@ const ResetPassword = () => {
 
       // Second approach: try to use the token to set the session
       try {
+        console.log("Trying to set session with token:", accessToken);
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: '',
@@ -155,9 +169,11 @@ const ResetPassword = () => {
         });
 
         if (updateError) {
+          console.error("Error updating password after session set:", updateError);
           throw updateError;
         } else {
           // Success with session method
+          console.log("Password updated successfully with session approach");
           setStatus("success");
           setMessage("Your password has been reset successfully!");
           
@@ -174,34 +190,59 @@ const ResetPassword = () => {
       } catch (sessionError) {
         console.error("Session approach failed:", sessionError);
         
-        // Third approach: try with recovery flow
+        // Third approach: try to verify the token directly
         try {
-          const { error } = await supabase.auth.resetPasswordForEmail(
-            searchParams.get("email") || "",
-            {
-              redirectTo: window.location.origin + "/reset-password"
-            }
-          );
-          
+          console.log("Trying verification token approach");
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: accessToken,
+            type: 'recovery',
+          });
+
           if (error) {
+            console.error("Error verifying OTP:", error);
             throw error;
-          } else {
-            setStatus("success");
-            setMessage("A new password reset link has been sent to your email.");
-            setTimeout(() => {
-              navigate("/auth?mode=login");
-            }, 3000);
-            return;
           }
-        } catch (recoveryError) {
-          console.error("All password reset approaches failed:", recoveryError);
-          throw new Error("Password reset failed after trying multiple approaches");
+          
+          console.log("OTP verified successfully:", data);
+          
+          // Update password after verification
+          const { error: pwError } = await supabase.auth.updateUser({
+            password: password
+          });
+          
+          if (pwError) {
+            console.error("Error updating password after OTP verification:", pwError);
+            throw pwError;
+          }
+          
+          console.log("Password updated successfully with OTP approach");
+          setStatus("success");
+          setMessage("Your password has been reset successfully!");
+          
+          toast({
+            title: "Password Updated",
+            description: "Your password has been reset successfully.",
+          });
+          
+          setTimeout(() => {
+            navigate("/auth?mode=login");
+          }, 3000);
+          return;
+        } catch (otpError) {
+          console.error("OTP approach failed:", otpError);
+          throw new Error("All password reset approaches failed. Please request a new reset link.");
         }
       }
     } catch (error: any) {
       console.error("Password reset error:", error);
       setStatus("error");
       setMessage(error.message || "An error occurred during password reset. Please try again or request a new reset link.");
+      
+      toast({
+        variant: "destructive",
+        title: "Password Reset Failed",
+        description: error.message || "Failed to reset password. Please try again or request a new link."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -241,6 +282,16 @@ const ResetPassword = () => {
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>
                 {message}
+                <div className="mt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate("/auth?mode=forgotPassword")}
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Request New Reset Link
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           )}
