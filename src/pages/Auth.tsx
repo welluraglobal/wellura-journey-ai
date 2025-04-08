@@ -1,7 +1,6 @@
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { UserContext } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Key, Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import BackButton from "@/components/BackButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -25,10 +24,18 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [isResetEmailSending, setIsResetEmailSending] = useState(false);
   
-  const { setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { signIn, signUp, authState } = useAuth();
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [authState.isAuthenticated, navigate]);
+
+  // Set mode based on URL parameter
   useEffect(() => {
     const newMode = searchParams.get("mode") === "login" ? "login" : "signup";
     setMode(newMode);
@@ -60,17 +67,11 @@ const Auth = () => {
           return;
         }
         
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-              user_type: 'user',
-              updated_at: new Date().toISOString()
-            }
-          }
+        const { error, data } = await signUp(email, password, {
+          first_name: firstName,
+          last_name: lastName,
+          user_type: 'user',
+          updated_at: new Date().toISOString()
         });
         
         if (error) {
@@ -83,61 +84,17 @@ const Auth = () => {
         });
         
       } else {
-        console.log("Logging in with:", email, "password length:", password.length);
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+        // Login mode
+        console.log("Attempting to login with:", email);
+        const { error } = await signIn(email, password);
         
         if (error) {
           throw error;
         }
         
-        console.log("Login successful, data:", data);
+        // Login successful - redirection will happen automatically via the useEffect above
+        console.log("Login successful");
       }
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log("Session obtained after login:", session);
-        setIsLoggedIn(true);
-        localStorage.setItem("wellura-authenticated", "true");
-        
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('first_name, privacy_accepted, health_disclaimer_accepted')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profileError) {
-            console.error("Error fetching profile:", profileError);
-            navigate("/profile-setup");
-            return;
-          }
-          
-          if (profile) {
-            const hasPolicyAccepted = !!profile.privacy_accepted && !!profile.health_disclaimer_accepted;
-            
-            if (!hasPolicyAccepted) {
-              if (profile.first_name) {
-                navigate("/confirmations");
-              } else {
-                navigate("/profile-setup");
-              }
-            } else if (profile.first_name) {
-              navigate("/dashboard");
-            } else {
-              navigate("/profile-setup");
-            }
-          } else {
-            navigate("/profile-setup");
-          }
-        } catch (profileError) {
-          console.error("Profile fetch error:", profileError);
-          navigate("/profile-setup");
-        }
-      }
-      
     } catch (error: any) {
       console.error("Auth error:", error);
       toast({
@@ -162,13 +119,7 @@ const Auth = () => {
 
     setIsResetEmailSending(true);
     try {
-      const currentUrl = window.location.origin;
-      const resetUrl = `${currentUrl}/reset-password`;
-      console.log("Reset URL:", resetUrl);
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: resetUrl,
-      });
+      const { error } = await useAuth().requestPasswordReset(resetEmail);
 
       if (error) {
         throw error;
