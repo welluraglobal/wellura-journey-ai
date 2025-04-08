@@ -22,23 +22,36 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Log all possible token locations for debugging
+    console.log("Current URL:", window.location.href);
+    console.log("URL Search Params:", Object.fromEntries(searchParams.entries()));
+    console.log("URL Hash:", window.location.hash);
+    
+    // Try to extract the token from various possible locations
     const extractToken = () => {
-      // First, check URL parameters
-      const token = searchParams.get("access_token");
-      if (token) {
-        console.log("Access token found in URL parameters");
-        return token;
+      // Check for the token in URL params with various possible names
+      const possibleParamNames = ["access_token", "token", "t"];
+      for (const paramName of possibleParamNames) {
+        const token = searchParams.get(paramName);
+        if (token) {
+          console.log(`Token found in URL parameter: ${paramName}`);
+          return token;
+        }
       }
       
-      // Next, check hash parameters
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hashToken = hashParams.get("access_token");
-      if (hashToken) {
-        console.log("Access token found in URL hash");
-        return hashToken;
+      // Check for token in the hash (fragment) part of the URL
+      if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        for (const paramName of possibleParamNames) {
+          const token = hashParams.get(paramName);
+          if (token) {
+            console.log(`Token found in URL hash with parameter: ${paramName}`);
+            return token;
+          }
+        }
       }
       
-      // Check for type=recovery parameter (Supabase verification links format)
+      // Check for Supabase recovery flow
       const type = searchParams.get("type");
       if (type === "recovery") {
         const recoveryToken = searchParams.get("token");
@@ -48,26 +61,19 @@ const ResetPassword = () => {
         }
       }
       
-      // Check for direct token parameter
-      const directToken = searchParams.get("token");
-      if (directToken) {
-        console.log("Token found directly in URL parameters");
-        return directToken;
-      }
-      
-      console.error("No access/recovery token found in URL");
-      console.error("- URL search params:", Object.fromEntries(searchParams.entries()));
-      console.error("- URL hash:", window.location.hash);
-      console.error("- Full URL:", window.location.href);
+      console.error("No token found in URL parameters or hash");
       return null;
     };
 
     const token = extractToken();
+    
     if (token) {
       setAccessToken(token);
+      console.log("Token extracted and set successfully");
     } else {
       setStatus("error");
       setMessage("Invalid or missing reset token. Please request a new password reset link.");
+      console.error("Failed to extract token from URL");
     }
   }, [searchParams]);
 
@@ -77,6 +83,7 @@ const ResetPassword = () => {
     setStatus("processing");
 
     try {
+      // Validate passwords
       if (password !== confirmPassword) {
         setStatus("error");
         setMessage("Passwords do not match.");
@@ -100,18 +107,48 @@ const ResetPassword = () => {
 
       console.log("Attempting to reset password with token");
 
-      // Set the access token in the session
-      const { error: sessionError } = await supabase.auth.setSession({
+      // Try to use the token to set the session
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: '',
       });
 
       if (sessionError) {
         console.error("Error setting session:", sessionError);
-        setStatus("error");
-        setMessage("Invalid or expired reset token. Please request a new password reset link.");
-        setIsLoading(false);
-        return;
+        
+        // If the error is related to the token, try the recovery flow directly
+        if (sessionError.message?.includes("invalid token")) {
+          console.log("Trying alternative password reset method...");
+          
+          // Try the updateUser method directly with the token
+          const { error } = await supabase.auth.updateUser({
+            password: password
+          }, {
+            emailRedirectTo: window.location.origin + "/auth?mode=login"
+          });
+          
+          if (error) {
+            throw error;
+          } else {
+            setStatus("success");
+            setMessage("Your password has been reset successfully!");
+            toast({
+              title: "Password Updated",
+              description: "Your password has been reset successfully.",
+            });
+            
+            setTimeout(() => {
+              navigate("/auth?mode=login");
+            }, 3000);
+            return;
+          }
+        } else {
+          throw sessionError;
+        }
+      }
+      
+      if (sessionData) {
+        console.log("Session set successfully");
       }
 
       // Update the password
@@ -121,19 +158,16 @@ const ResetPassword = () => {
 
       if (error) {
         console.error("Password reset error:", error);
-        setStatus("error");
-        setMessage(error.message || "Failed to reset password. Please try again.");
+        throw error;
       } else {
         setStatus("success");
         setMessage("Your password has been reset successfully!");
         
-        // Show toast message
         toast({
           title: "Password Updated",
           description: "Your password has been reset successfully.",
         });
         
-        // Redirect to login page after a short delay
         setTimeout(() => {
           navigate("/auth?mode=login");
         }, 3000);
