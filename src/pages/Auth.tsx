@@ -28,6 +28,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const { signIn, signUp, authState } = useAuth();
 
+  console.log("Auth component rendered with mode:", mode);
+  console.log("Search params:", Object.fromEntries(searchParams.entries()));
+
   // Redirect if already authenticated
   useEffect(() => {
     if (authState.isAuthenticated) {
@@ -38,6 +41,7 @@ const Auth = () => {
   // Set mode based on URL parameter
   useEffect(() => {
     const modeParam = searchParams.get("mode");
+    console.log("Mode parameter:", modeParam);
     if (modeParam === "signup") {
       setMode("signup");
     } else if (modeParam === "login") {
@@ -160,7 +164,10 @@ const Auth = () => {
         <Tabs 
           defaultValue={mode} 
           value={mode} 
-          onValueChange={(value) => setMode(value as "login" | "signup")} 
+          onValueChange={(value) => {
+            console.log("Tabs value changing to:", value);
+            setMode(value as "login" | "signup");
+          }} 
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2 mb-6">

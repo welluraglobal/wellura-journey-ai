@@ -1,17 +1,21 @@
 
 import { Button } from "@/components/ui/button";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { UserContext } from "@/contexts/UserContext";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { isLoggedIn } = useContext(UserContext);
+  const { authState } = useAuth();
   const navigate = useNavigate();
   
-  // If user is already logged in, redirect to dashboard
-  if (isLoggedIn) {
-    navigate("/dashboard");
-  }
+  // Only redirect to dashboard if already logged in - using useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [authState.isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
