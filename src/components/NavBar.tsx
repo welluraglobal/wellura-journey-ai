@@ -72,6 +72,12 @@ const NavBar = () => {
     setShowProfileCard(!showProfileCard);
   };
 
+  const handleEditProfile = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop event propagation
+    setShowProfileCard(false);
+    navigate("/profile-setup");
+  };
+
   return (
     <TooltipProvider>
       <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white relative">
@@ -240,10 +246,7 @@ const NavBar = () => {
                     variant="outline" 
                     size="sm" 
                     className="w-full" 
-                    onClick={() => {
-                      setShowProfileCard(false);
-                      navigate("/profile-setup");
-                    }}
+                    onClick={handleEditProfile}
                   >
                     Edit Profile
                   </Button>
