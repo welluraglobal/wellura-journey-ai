@@ -22,26 +22,52 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Extract access_token from URL parameters
-    const token = searchParams.get("access_token");
-    
-    if (token) {
-      console.log("Access token found in URL");
-      setAccessToken(token);
-    } else {
-      // Look for hash params (#access_token=...)
+    const extractToken = () => {
+      // First, check URL parameters
+      const token = searchParams.get("access_token");
+      if (token) {
+        console.log("Access token found in URL parameters");
+        return token;
+      }
+      
+      // Next, check hash parameters
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hashToken = hashParams.get("access_token");
-      
       if (hashToken) {
         console.log("Access token found in URL hash");
-        setAccessToken(hashToken);
-      } else {
-        console.error("No access token found in URL - params:", Object.fromEntries(searchParams.entries()));
-        console.error("URL hash:", window.location.hash);
-        setStatus("error");
-        setMessage("Invalid or missing reset token. Please request a new password reset link.");
+        return hashToken;
       }
+      
+      // Check for type=recovery parameter (Supabase verification links format)
+      const type = searchParams.get("type");
+      if (type === "recovery") {
+        const recoveryToken = searchParams.get("token");
+        if (recoveryToken) {
+          console.log("Recovery token found in URL parameters");
+          return recoveryToken;
+        }
+      }
+      
+      // Check for direct token parameter
+      const directToken = searchParams.get("token");
+      if (directToken) {
+        console.log("Token found directly in URL parameters");
+        return directToken;
+      }
+      
+      console.error("No access/recovery token found in URL");
+      console.error("- URL search params:", Object.fromEntries(searchParams.entries()));
+      console.error("- URL hash:", window.location.hash);
+      console.error("- Full URL:", window.location.href);
+      return null;
+    };
+
+    const token = extractToken();
+    if (token) {
+      setAccessToken(token);
+    } else {
+      setStatus("error");
+      setMessage("Invalid or missing reset token. Please request a new password reset link.");
     }
   }, [searchParams]);
 
@@ -72,7 +98,7 @@ const ResetPassword = () => {
         return;
       }
 
-      console.log("Attempting to reset password with access token");
+      console.log("Attempting to reset password with token");
 
       // Set the access token in the session
       const { error: sessionError } = await supabase.auth.setSession({
