@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
@@ -20,6 +19,7 @@ const Chat = () => {
   const [userLanguage, setUserLanguage] = useState<"pt" | "es" | "en">("en");
   const [localUserProfile, setLocalUserProfile] = useState<any>(null);
   const [isThinking, setIsThinking] = useState(false);
+  const [hasShownWelcomeMessage, setHasShownWelcomeMessage] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -38,8 +38,10 @@ const Chat = () => {
     const savedMessages = localStorage.getItem(`wellura-chat-${newConversationId}`);
     if (savedMessages) {
       try {
-        setMessages(JSON.parse(savedMessages));
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages);
         setIsFirstInteraction(false); // Not first interaction if we have saved messages
+        setHasShownWelcomeMessage(true); // Assume welcome message was shown already
       } catch (e) {
         console.error("Error parsing saved messages:", e);
       }
@@ -83,6 +85,33 @@ const Chat = () => {
       fetchProfile();
     }
   }, [userId, userProfile]);
+
+  // Send welcome message when chat first loads and no messages exist
+  useEffect(() => {
+    if (
+      !hasShownWelcomeMessage && 
+      messages.length === 0 && 
+      (userLanguage === "pt" || userLanguage === "es" || userLanguage === "en")
+    ) {
+      const welcomeMessages = {
+        pt: `Olá ${firstName || ""}! 😊 Sou seu consultor de bem-estar da Wellura. Como posso ajudar na sua jornada de saúde hoje?`,
+        es: `¡Hola ${firstName || ""}! 😊 Soy tu consultor de bienestar de Wellura. ¿Cómo puedo ayudarte en tu viaje de salud hoy?`,
+        en: `Hi ${firstName || ""}! 😊 I'm your Wellura wellness consultant. How can I help with your health journey today?`
+      };
+
+      // Add welcome message
+      const welcomeMessage: Message = {
+        id: `welcome-${Date.now()}`,
+        role: "assistant",
+        content: welcomeMessages[userLanguage],
+        timestamp: new Date(),
+      };
+      
+      setMessages([welcomeMessage]);
+      setHasShownWelcomeMessage(true);
+      setIsFirstInteraction(false);
+    }
+  }, [hasShownWelcomeMessage, messages.length, userLanguage, firstName]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
