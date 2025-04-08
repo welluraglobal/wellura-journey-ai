@@ -45,7 +45,10 @@ additional_redirect_urls = [
   "http://127.0.0.1:5173/reset-password?token=*",
   "http://127.0.0.1:5173/reset-password?type=recovery&token=*",
   "https://welluraapp.com/reset-password?error=access_denied&error_code=401&error_description=Email+link+is+invalid+or+has+expired",
-  "http://localhost:5173/reset-password?error=access_denied&error_code=401&error_description=Email+link+is+invalid+or+has+expired"
+  "http://localhost:5173/reset-password?error=access_denied&error_code=401&error_description=Email+link+is+invalid+or+has+expired",
+  "https://welluraapp.com/reset-password#access_token=*",
+  "http://localhost:5173/reset-password#access_token=*",
+  "http://127.0.0.1:5173/reset-password#access_token=*"
 ]
 
 [storage]

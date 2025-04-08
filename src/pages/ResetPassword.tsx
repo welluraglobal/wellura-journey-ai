@@ -41,6 +41,16 @@ const ResetPassword = () => {
       return null;
     }
     
+    // Check for access_token directly in hash (from email link)
+    if (window.location.hash.includes("access_token=")) {
+      const hash = window.location.hash.substring(1);
+      const tokenFromHash = new URLSearchParams(hash).get("access_token");
+      if (tokenFromHash) {
+        console.log("✅ Token extracted from hash:", tokenFromHash);
+        return tokenFromHash;
+      }
+    }
+    
     // First try to get token directly from URL query parameters
     const token = searchParams.get("token") || 
                  searchParams.get("access_token") || 
@@ -143,33 +153,63 @@ const ResetPassword = () => {
       // Try all possible approaches to reset the password
       let resetSuccessful = false;
 
-      // 1. Try with the updateUser method first (if user is already logged in)
+      // 1. First try with setSession approach (most likely to work with email links)
       try {
-        console.log("Trying direct updateUser approach");
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData.session) {
-          const { error } = await supabase.auth.updateUser({
+        console.log("Trying setSession approach with token:", accessToken);
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: '',
+        });
+
+        if (!error) {
+          console.log("Session set successfully:", data);
+          
+          const { error: updateError } = await supabase.auth.updateUser({
             password: password
           });
-          
-          if (!error) {
-            console.log("Password updated successfully with direct approach");
+
+          if (!updateError) {
+            console.log("Password updated successfully with session approach");
             resetSuccessful = true;
           } else {
-            console.log("Direct update failed:", error.message);
+            console.error("Error updating password after session set:", updateError);
           }
         } else {
-          console.log("No active session for direct update");
+          console.error("Error setting session:", error);
         }
-      } catch (directUpdateError) {
-        console.log("Direct update approach failed:", directUpdateError);
+      } catch (sessionError) {
+        console.error("Session approach failed:", sessionError);
       }
 
-      // 2. Try to verify the token first, then update the password
+      // 2. Try with the updateUser method (if user is already logged in)
       if (!resetSuccessful) {
         try {
-          console.log("Trying to verify token first, then update password");
+          console.log("Trying direct updateUser approach");
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (sessionData.session) {
+            const { error } = await supabase.auth.updateUser({
+              password: password
+            });
+            
+            if (!error) {
+              console.log("Password updated successfully with direct approach");
+              resetSuccessful = true;
+            } else {
+              console.log("Direct update failed:", error.message);
+            }
+          } else {
+            console.log("No active session for direct update");
+          }
+        } catch (directUpdateError) {
+          console.log("Direct update approach failed:", directUpdateError);
+        }
+      }
+
+      // 3. Try to verify the token as OTP
+      if (!resetSuccessful) {
+        try {
+          console.log("Trying to verify token as OTP");
           const { error } = await supabase.auth.verifyOtp({
             token_hash: accessToken,
             type: 'recovery'
@@ -192,36 +232,6 @@ const ResetPassword = () => {
           }
         } catch (verifyError) {
           console.error("Verification approach failed:", verifyError);
-        }
-      }
-
-      // 3. Try with session approach if other methods failed
-      if (!resetSuccessful) {
-        try {
-          console.log("Trying session approach with token:", accessToken);
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: '',
-          });
-
-          if (!error) {
-            console.log("Session set successfully:", data);
-            
-            const { error: updateError } = await supabase.auth.updateUser({
-              password: password
-            });
-
-            if (!updateError) {
-              console.log("Password updated successfully with session approach");
-              resetSuccessful = true;
-            } else {
-              console.error("Error updating password after session set:", updateError);
-            }
-          } else {
-            console.error("Error setting session:", error);
-          }
-        } catch (sessionError) {
-          console.error("Session approach failed:", sessionError);
         }
       }
 
@@ -263,7 +273,10 @@ const ResetPassword = () => {
     // Since we can't directly control the dialog from another component,
     // we'll add a query parameter and handle it in the Auth component
     setTimeout(() => {
-      document.querySelector('[aria-label="Forgot Password"]')?.click();
+      const forgotPasswordButton = document.querySelector('[aria-label="Forgot Password"]');
+      if (forgotPasswordButton instanceof HTMLElement) {
+        forgotPasswordButton.click();
+      }
     }, 500);
   };
 
