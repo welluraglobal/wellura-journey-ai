@@ -5,11 +5,11 @@ import { UserContext } from "@/contexts/UserContext";
 import { Link, useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const { isLoggedIn, hasProfile } = useContext(UserContext);
+  const { isLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
   
-  // If user is already logged in and has profile, redirect to dashboard
-  if (isLoggedIn && hasProfile) {
+  // If user is already logged in, redirect to dashboard
+  if (isLoggedIn) {
     navigate("/dashboard");
   }
 
