@@ -1,5 +1,5 @@
 
-import { useState, useContext } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "@/App";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ const NavBar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
+  const profileCardRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleLogout = () => {
     // This will be replaced with actual Supabase auth logout once integrated
@@ -77,6 +79,25 @@ const NavBar = () => {
     setShowProfileCard(false);
     navigate("/profile-setup");
   };
+
+  // Handle clicks outside the profile card
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileCardRef.current && 
+        !profileCardRef.current.contains(event.target as Node) &&
+        profileButtonRef.current && 
+        !profileButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileCard(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <TooltipProvider>
@@ -122,6 +143,7 @@ const NavBar = () => {
         <div className="flex items-center">
           {/* Profile Button */}
           <Button 
+            ref={profileButtonRef}
             variant="outline" 
             className="mr-3 hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20"
             onClick={toggleProfileCard}
@@ -201,7 +223,7 @@ const NavBar = () => {
 
         {/* Profile Card */}
         {showProfileCard && (
-          <div className="absolute top-16 right-6 z-50">
+          <div ref={profileCardRef} className="absolute top-16 right-6 z-50">
             <Card className="w-80 shadow-lg border-2">
               <CardHeader className="bg-gradient-wellura text-white">
                 <CardTitle className="text-xl">
