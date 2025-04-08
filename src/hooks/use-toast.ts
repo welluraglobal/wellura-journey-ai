@@ -1,10 +1,7 @@
 
 import * as React from "react";
-import {
-  ToastActionElement,
-  ToastProps
-} from "@/components/ui/toast";
-import { useToaster } from "sonner";
+import { ToastActionElement } from "@/components/ui/toast";
+import { toast as sonnerToast } from "sonner";
 
 export type ToastVariant = "default" | "destructive";
 
@@ -148,12 +145,12 @@ function dispatch(action: Action) {
   });
 }
 
-type ToastProps = Partial<ToasterToast>;
+type ToastOptions = Partial<ToasterToast>;
 
-function toast({ ...props }: ToastProps) {
+function toast({ ...props }: ToastOptions) {
   const id = genId();
 
-  const update = (props: ToastProps) =>
+  const update = (props: ToastOptions) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
@@ -177,7 +174,7 @@ function toast({ ...props }: ToastProps) {
 }
 
 // Helper functions for common toast types
-toast.success = (props: string | ToastProps) => {
+toast.success = (props: string | ToastOptions) => {
   const isString = typeof props === "string";
   return toast({
     variant: "default",
@@ -186,7 +183,7 @@ toast.success = (props: string | ToastProps) => {
   });
 };
 
-toast.error = (props: string | ToastProps) => {
+toast.error = (props: string | ToastOptions) => {
   const isString = typeof props === "string";
   return toast({
     variant: "destructive",
@@ -195,7 +192,7 @@ toast.error = (props: string | ToastProps) => {
   });
 };
 
-toast.warning = (props: string | ToastProps) => {
+toast.warning = (props: string | ToastOptions) => {
   const isString = typeof props === "string";
   return toast({
     variant: "default",
