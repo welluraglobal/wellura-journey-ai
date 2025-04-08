@@ -1,5 +1,4 @@
 
-
 project_id = "wahxxjnvgexfgebjzwqj"
 
 [api]
@@ -22,7 +21,11 @@ port = 54324
 [auth]
 enabled = true
 site_url = "https://welluraapp.com"
-additional_redirect_urls = ["https://welluraapp.com/confirm-email", "https://welluraapp.com/reset-password"]
+additional_redirect_urls = [
+  "https://welluraapp.com/confirm-email", 
+  "https://welluraapp.com/reset-password",
+  "https://welluraapp.com/auth"
+]
 
 [storage]
 enabled = true
@@ -35,4 +38,3 @@ verify_jwt = true
 
 [functions.google-places-search]
 verify_jwt = true
-

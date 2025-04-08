@@ -18,34 +18,21 @@ const ResetPassword = () => {
   const [status, setStatus] = useState<"ready" | "processing" | "success" | "error">("ready");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verify that the token is present and valid
-    const verifyToken = async () => {
-      const token = searchParams.get("token");
-      
-      if (!token) {
-        console.error("No token found in URL");
-        setStatus("error");
-        setMessage("Invalid or missing reset token. Please request a new password reset link.");
-        return;
-      }
-      
-      console.log("Token found in URL:", token);
-      
-      try {
-        // Just check if the token is present, actual verification happens on submit
-        setTokenValid(true);
-      } catch (error) {
-        console.error("Token verification error:", error);
-        setStatus("error");
-        setMessage("There was an error verifying your reset token. Please request a new password reset link.");
-      }
-    };
-
-    verifyToken();
+    // Extract access_token from URL
+    const token = searchParams.get("access_token");
+    
+    if (token) {
+      console.log("Access token found in URL");
+      setAccessToken(token);
+    } else {
+      console.error("No access token found in URL");
+      setStatus("error");
+      setMessage("Invalid or missing reset token. Please request a new password reset link.");
+    }
   }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -68,18 +55,30 @@ const ResetPassword = () => {
         return;
       }
 
-      const token = searchParams.get("token");
-      
-      if (!token) {
+      if (!accessToken) {
         setStatus("error");
         setMessage("Invalid reset token. Please request a new password reset link.");
         setIsLoading(false);
         return;
       }
 
-      console.log("Attempting to reset password with token:", token);
+      console.log("Attempting to reset password with access token");
 
-      // Update the password using the correct method from Supabase
+      // Set the access token in the session
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: '',
+      });
+
+      if (sessionError) {
+        console.error("Error setting session:", sessionError);
+        setStatus("error");
+        setMessage("Invalid or expired reset token. Please request a new password reset link.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -150,7 +149,7 @@ const ResetPassword = () => {
             </Alert>
           )}
 
-          {(status === "ready" || status === "processing") && tokenValid && (
+          {(status === "ready" || status === "processing") && accessToken && (
             <form onSubmit={handlePasswordReset}>
               <div className="space-y-4">
                 <div className="space-y-2">
