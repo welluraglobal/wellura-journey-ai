@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Key, Lock } from "lucide-react";
+import { Mail, Key, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import BackButton from "@/components/BackButton";
 
 const Auth = () => {
   const location = useLocation();
@@ -189,10 +190,7 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col bg-background p-4">
       <div className="w-full max-w-md mx-auto">
         <div className="mb-4">
-          <Link to="/" className="back-button">
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Link>
+          <BackButton fallbackPath="/" />
         </div>
         
         <div className="text-center mb-8">
