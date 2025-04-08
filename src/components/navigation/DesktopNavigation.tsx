@@ -39,16 +39,8 @@ const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
         ))}
       </div>
 
-      <div className="flex items-center">
-        <Button
-          variant="outline"
-          className="mr-3 hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20"
-          onClick={toggleProfileCard}
-        >
-          <User className="h-4 w-4 mr-2" />
-          Profile
-        </Button>
-
+      <div className="flex items-center ml-auto">
+        {/* Removed duplicate Profile button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="hidden md:flex text-white border-white/30 bg-white/10 hover:bg-white/20">
@@ -59,6 +51,9 @@ const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={toggleProfileCard}>
+              Profile
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleNavigation('/dashboard')}>
               Dashboard
             </DropdownMenuItem>

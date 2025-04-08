@@ -72,8 +72,8 @@ const NavBar = () => {
 
   return (
     <TooltipProvider>
-      <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white relative">
-        <div className="flex items-center">
+      <nav className="py-4 px-6 border-b flex items-center bg-gradient-wellura text-white relative">
+        <div className="flex items-center flex-grow">
           {location.pathname !== "/" && (
             <Button 
               variant="ghost" 
