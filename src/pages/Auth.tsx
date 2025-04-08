@@ -1,3 +1,4 @@
+
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -160,6 +161,7 @@ const Auth = () => {
 
     setIsResetEmailSending(true);
     try {
+      // Use absolute URL for reset link
       const resetUrl = "https://welluraapp.com/reset-password";
       console.log("Reset URL:", resetUrl);
       

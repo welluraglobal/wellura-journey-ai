@@ -170,10 +170,11 @@ const ResetPassword = () => {
       if (!resetSuccessful) {
         try {
           console.log("Trying OTP verification approach with token:", accessToken);
+          // Fixed: Use the correct parameter structure for verifyOtp
           const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: accessToken,
             type: 'recovery',
-            password: password
+            token_hash: accessToken,
+            new_password: password
           });
 
           if (!error) {
