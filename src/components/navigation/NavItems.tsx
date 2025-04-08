@@ -1,10 +1,11 @@
 
 import { Home, BarChart, MessageCircle } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 export type NavItem = {
   name: string;
   path: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
 };
 
 export const navItems: NavItem[] = [
