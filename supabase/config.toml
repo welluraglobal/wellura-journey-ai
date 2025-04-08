@@ -24,7 +24,9 @@ site_url = "https://welluraapp.com"
 additional_redirect_urls = [
   "https://welluraapp.com/confirm-email", 
   "https://welluraapp.com/reset-password",
-  "https://welluraapp.com/auth"
+  "https://welluraapp.com/auth",
+  "http://localhost:5173/reset-password",
+  "http://localhost:5173/confirm-email"
 ]
 
 [storage]

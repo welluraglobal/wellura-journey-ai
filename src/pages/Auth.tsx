@@ -1,3 +1,4 @@
+
 import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { UserContext } from "@/App";
@@ -161,7 +162,7 @@ const Auth = () => {
     setIsResetEmailSending(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth?mode=login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
