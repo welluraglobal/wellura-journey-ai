@@ -64,6 +64,12 @@ const NavBar = () => {
     navigate(path);
   };
 
+  // Profile navigation handler specifically for debugging
+  const handleProfileNavigation = () => {
+    console.log("Profile button clicked, navigating to /profile-setup");
+    navigate("/profile-setup");
+  };
+
   return (
     <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
       <div className="flex items-center">
@@ -116,18 +122,18 @@ const NavBar = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem>
               <button 
-                onClick={() => handleNavigation('/profile-setup')} 
-                className="w-full text-left cursor-pointer"
+                onClick={handleProfileNavigation} 
+                className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
               >
                 Profile
               </button>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem>
               <button 
                 onClick={() => navigate('/dashboard')} 
-                className="w-full text-left cursor-pointer"
+                className="w-full text-left cursor-pointer bg-transparent border-0 px-0"
               >
                 Dashboard
               </button>
