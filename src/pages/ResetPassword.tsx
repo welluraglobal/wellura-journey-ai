@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, AlertTriangle, Check, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import BackButton from "@/components/BackButton";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -112,7 +113,11 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md mb-4 flex justify-start">
+        <BackButton fallbackPath="/" />
+      </div>
+      
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Reset Password</CardTitle>
