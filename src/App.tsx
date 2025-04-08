@@ -15,6 +15,8 @@ import NearbyGyms from "./pages/NearbyGyms";
 import FindProfessionals from "./pages/FindProfessionals";
 import NotFound from "./pages/NotFound";
 import ConfirmationScreens from "./components/ConfirmationScreens";
+import ConfirmEmail from "./pages/ConfirmEmail";
+import ResetPassword from "./pages/ResetPassword";
 import { useState, useEffect, createContext } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -147,6 +149,8 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/confirm-email" element={<ConfirmEmail />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route
                 path="/profile-setup"
                 element={

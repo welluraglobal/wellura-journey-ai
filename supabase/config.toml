@@ -20,7 +20,8 @@ port = 54324
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:5173"
+site_url = "https://welluraapp.com"
+additional_redirect_urls = ["https://welluraapp.com/confirm-email", "https://welluraapp.com/reset-password"]
 
 [storage]
 enabled = true
