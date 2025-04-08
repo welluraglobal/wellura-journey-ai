@@ -27,7 +27,9 @@ additional_redirect_urls = [
   "https://welluraapp.com/auth",
   "http://localhost:5173/reset-password",
   "http://localhost:5173/confirm-email",
-  "http://localhost:5173/auth"
+  "http://localhost:5173/auth",
+  "https://welluraapp.com/login",
+  "http://localhost:5173/login"
 ]
 
 [storage]
