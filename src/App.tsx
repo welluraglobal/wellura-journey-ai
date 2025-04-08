@@ -19,7 +19,14 @@ import { UserProvider } from "@/contexts/UserContext";
 import { useEffect } from "react";
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+});
 
 // App wrapper to provide all contexts
 function AppWrapper() {
@@ -43,24 +50,22 @@ function AppContent() {
   
   return (
     <div>
-      <QueryClientProvider
-        client={queryClient}
-      >
+      <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           {/* Use only one toast provider */}
           <Toaster />
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={!isLoggedIn ? <Auth /> : <Navigate to="/dashboard" />} />
+            <Route path="/auth" element={!isLoggedIn ? <Auth /> : <Navigate to="/dashboard" replace />} />
             <Route path="/confirm-email" element={<ConfirmEmail />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/profile-setup" element={isLoggedIn ? <ProfileSetup /> : <Navigate to="/auth" />} />
-            <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/auth" />} />
-            <Route path="/quiz" element={isLoggedIn ? <Quiz /> : <Navigate to="/auth" />} />
-            <Route path="/chat" element={isLoggedIn ? <Chat /> : <Navigate to="/auth" />} />
-            <Route path="/nearby-gyms" element={isLoggedIn ? <NearbyGyms /> : <Navigate to="/auth" />} />
-            <Route path="/find-professionals" element={isLoggedIn ? <FindProfessionals /> : <Navigate to="/auth" />} />
-            <Route path="/plan-generator" element={isLoggedIn ? <PlanGenerator /> : <Navigate to="/auth" />} />
+            <Route path="/profile-setup" element={isLoggedIn ? <ProfileSetup /> : <Navigate to="/auth" replace />} />
+            <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/auth" replace />} />
+            <Route path="/quiz" element={isLoggedIn ? <Quiz /> : <Navigate to="/auth" replace />} />
+            <Route path="/chat" element={isLoggedIn ? <Chat /> : <Navigate to="/auth" replace />} />
+            <Route path="/nearby-gyms" element={isLoggedIn ? <NearbyGyms /> : <Navigate to="/auth" replace />} />
+            <Route path="/find-professionals" element={isLoggedIn ? <FindProfessionals /> : <Navigate to="/auth" replace />} />
+            <Route path="/plan-generator" element={isLoggedIn ? <PlanGenerator /> : <Navigate to="/auth" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

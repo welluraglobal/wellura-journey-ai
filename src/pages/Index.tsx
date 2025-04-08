@@ -13,7 +13,7 @@ const Index = () => {
   // Only redirect to dashboard if already logged in - using useEffect to avoid render-time navigation
   useEffect(() => {
     if (authState.isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   }, [authState.isAuthenticated, navigate]);
 

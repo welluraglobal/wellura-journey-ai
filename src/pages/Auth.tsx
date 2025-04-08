@@ -23,6 +23,7 @@ const Auth = () => {
   const [isForgotPasswordDialogOpen, setIsForgotPasswordDialogOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetEmailSending, setIsResetEmailSending] = useState(false);
+  const [initialModeSet, setInitialModeSet] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,8 +31,6 @@ const Auth = () => {
   const { signIn, signUp, authState, requestPasswordReset } = useAuth();
 
   console.log("Auth component rendered with mode:", mode);
-  console.log("Search params:", Object.fromEntries(searchParams.entries()));
-  console.log("Current location:", location.pathname + location.search);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -40,16 +39,21 @@ const Auth = () => {
     }
   }, [authState.isAuthenticated, navigate]);
 
-  // Set mode based on URL parameter
+  // Set mode based on URL parameter only once on initial load
   useEffect(() => {
-    const modeParam = searchParams.get("mode");
-    console.log("Mode parameter:", modeParam);
-    if (modeParam === "signup") {
-      setMode("signup");
-    } else if (modeParam === "login") {
-      setMode("login");
+    if (!initialModeSet) {
+      const modeParam = searchParams.get("mode");
+      console.log("Initial mode parameter:", modeParam);
+      
+      if (modeParam === "signup") {
+        setMode("signup");
+      } else if (modeParam === "login") {
+        setMode("login");
+      }
+      
+      setInitialModeSet(true);
     }
-  }, [searchParams]);
+  }, [searchParams, initialModeSet]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +158,17 @@ const Auth = () => {
     }
   };
 
+  // Function to handle tab changes without updating URL on every click
+  const handleTabChange = (value: string) => {
+    console.log("Tab changing to:", value);
+    setMode(value as "login" | "signup");
+    
+    // Update URL only when explicitly changing tabs via user interaction
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('mode', value);
+    navigate(`/auth?${newParams.toString()}`, { replace: true });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background p-4">
       <div className="w-full max-w-md mx-auto">
@@ -167,14 +182,7 @@ const Auth = () => {
         <Tabs 
           defaultValue={mode} 
           value={mode} 
-          onValueChange={(value) => {
-            console.log("Tabs value changing to:", value);
-            setMode(value as "login" | "signup");
-            // Update URL to reflect the current mode
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('mode', value);
-            navigate(`/auth?${newParams.toString()}`, { replace: true });
-          }} 
+          onValueChange={handleTabChange} 
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -286,6 +294,7 @@ const Auth = () => {
                       variant="link"
                       className="mb-2 p-0 h-auto"
                       onClick={() => setIsForgotPasswordDialogOpen(true)}
+                      aria-label="Forgot Password"
                     >
                       Forgot Password?
                     </Button>
@@ -294,13 +303,7 @@ const Auth = () => {
                       <Button 
                         variant="link" 
                         className="p-0 h-auto" 
-                        onClick={() => {
-                          setMode("signup");
-                          // Update URL to reflect the current mode
-                          const newParams = new URLSearchParams(searchParams);
-                          newParams.set('mode', 'signup');
-                          navigate(`/auth?${newParams.toString()}`, { replace: true });
-                        }}
+                        onClick={() => handleTabChange("signup")}
                       >
                         Sign up
                       </Button>
@@ -314,13 +317,7 @@ const Auth = () => {
                     <Button 
                       variant="link" 
                       className="p-0 h-auto" 
-                      onClick={() => {
-                        setMode("login");
-                        // Update URL to reflect the current mode
-                        const newParams = new URLSearchParams(searchParams);
-                        newParams.set('mode', 'login');
-                        navigate(`/auth?${newParams.toString()}`, { replace: true });
-                      }}
+                      onClick={() => handleTabChange("login")}
                     >
                       Login
                     </Button>
