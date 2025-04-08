@@ -52,7 +52,7 @@ const NavBar = () => {
     { name: "Dashboard", path: "/dashboard", icon: Home },
     { name: "My Plan", path: "/plan-generator", icon: BarChart },
     { name: "AI Consultant", path: "/chat", icon: MessageCircle },
-    { name: "Profile", path: "/profile-setup", icon: User },
+    // Removed Profile from the main nav items as requested
     // Removed Settings from main nav to avoid 404 errors
   ];
 
@@ -63,12 +63,6 @@ const NavBar = () => {
     console.log("Navigating to:", path);
     setIsMenuOpen(false);
     navigate(path);
-  };
-
-  // Profile navigation handler specifically for debugging
-  const handleProfileNavigation = () => {
-    console.log("Profile button clicked, navigating to /profile-setup");
-    navigate("/profile-setup");
   };
 
   return (
@@ -124,9 +118,7 @@ const NavBar = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleProfileNavigation}>
-                Profile
-              </DropdownMenuItem>
+              {/* Profile button removed as requested */}
               <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                 Dashboard
               </DropdownMenuItem>
