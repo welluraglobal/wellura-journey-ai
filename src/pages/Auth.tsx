@@ -99,25 +99,38 @@ const Auth = () => {
         setIsLoggedIn(true);
         localStorage.setItem("wellura-authenticated", "true");
         
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('first_name, privacy_accepted, health_disclaimer_accepted')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('first_name, privacy_accepted, health_disclaimer_accepted')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profileError) {
+            console.error("Error fetching profile:", profileError);
+            navigate("/profile-setup");
+            return;
+          }
           
-        if (profile) {
-          if (!profile.privacy_accepted || !profile.health_disclaimer_accepted) {
-            if (profile.first_name) {
-              navigate("/confirmations");
+          if (profile) {
+            const hasPolicyAccepted = !!profile.privacy_accepted && !!profile.health_disclaimer_accepted;
+            
+            if (!hasPolicyAccepted) {
+              if (profile.first_name) {
+                navigate("/confirmations");
+              } else {
+                navigate("/profile-setup");
+              }
+            } else if (profile.first_name) {
+              navigate("/dashboard");
             } else {
               navigate("/profile-setup");
             }
-          } else if (profile.first_name) {
-            navigate("/dashboard");
           } else {
             navigate("/profile-setup");
           }
-        } else {
+        } catch (profileError) {
+          console.error("Profile fetch error:", profileError);
           navigate("/profile-setup");
         }
       }

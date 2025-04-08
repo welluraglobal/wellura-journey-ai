@@ -39,12 +39,12 @@ const ConfirmationScreens = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ 
           privacy_accepted: true, 
           health_disclaimer_accepted: true 
-        })
+        } as any)
         .eq('id', userId);
       
       if (error) throw error;
