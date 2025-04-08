@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useContext } from "react";
 import { UserContext } from "@/App";
 import NavBar from "@/components/NavBar";
@@ -93,25 +94,42 @@ const Chat = () => {
       messages.length === 0 && 
       (userLanguage === "pt" || userLanguage === "es" || userLanguage === "en")
     ) {
-      const welcomeMessages = {
-        pt: `Olá ${firstName || ""}! 😊 Sou seu consultor de bem-estar da Wellura. Como posso ajudar na sua jornada de saúde hoje?`,
-        es: `¡Hola ${firstName || ""}! 😊 Soy tu consultor de bienestar de Wellura. ¿Cómo puedo ayudarte en tu viaje de salud hoy?`,
-        en: `Hi ${firstName || ""}! 😊 I'm your Wellura wellness consultant. How can I help with your health journey today?`
-      };
+      // Customize welcome message based on whether user has completed the quiz
+      const hasCompletedQuiz = localUserProfile?.quiz_data && 
+                              localUserProfile?.quiz_data?.goals && 
+                              localUserProfile?.quiz_data?.goals.length > 0;
+      
+      let welcomeMessage: string;
+      
+      if (hasCompletedQuiz) {
+        const welcomeMessages = {
+          pt: `Olá ${firstName || ""}! 😊 Sou seu consultor de bem-estar da Wellura. Vejo que você já completou nosso quiz de saúde - obrigado! Isso me ajudará a oferecer conselhos mais personalizados para seus objetivos. Como posso ajudar na sua jornada de saúde hoje?`,
+          es: `¡Hola ${firstName || ""}! 😊 Soy tu consultor de bienestar de Wellura. Veo que ya has completado nuestro cuestionario de salud - ¡gracias! Esto me ayudará a ofrecer consejos más personalizados para tus objetivos. ¿Cómo puedo ayudarte en tu viaje de salud hoy?`,
+          en: `Hi ${firstName || ""}! 😊 I'm your Wellura wellness consultant. I see you've already completed our health quiz - thank you! This will help me provide more personalized advice for your goals. How can I help with your health journey today?`
+        };
+        welcomeMessage = welcomeMessages[userLanguage];
+      } else {
+        const welcomeMessages = {
+          pt: `Olá ${firstName || ""}! 😊 Sou seu consultor de bem-estar da Wellura. Para que eu possa oferecer recomendações mais personalizadas, sugiro que você faça nosso quiz de saúde rápido. Você pode encontrá-lo na aba "Quiz". Como posso ajudar na sua jornada de saúde hoje?`,
+          es: `¡Hola ${firstName || ""}! 😊 Soy tu consultor de bienestar de Wellura. Para que pueda ofrecerte recomendaciones más personalizadas, te sugiero que hagas nuestro cuestionario de salud rápido. Puedes encontrarlo en la pestaña "Quiz". ¿Cómo puedo ayudarte en tu viaje de salud hoy?`,
+          en: `Hi ${firstName || ""}! 😊 I'm your Wellura wellness consultant. To help me provide more personalized recommendations, I suggest taking our quick health quiz. You can find it in the "Quiz" tab. How can I help with your health journey today?`
+        };
+        welcomeMessage = welcomeMessages[userLanguage];
+      }
 
       // Add welcome message
-      const welcomeMessage: Message = {
+      const welcomeMessageObj: Message = {
         id: `welcome-${Date.now()}`,
         role: "assistant",
-        content: welcomeMessages[userLanguage],
+        content: welcomeMessage,
         timestamp: new Date(),
       };
       
-      setMessages([welcomeMessage]);
+      setMessages([welcomeMessageObj]);
       setHasShownWelcomeMessage(true);
       setIsFirstInteraction(false);
     }
-  }, [hasShownWelcomeMessage, messages.length, userLanguage, firstName]);
+  }, [hasShownWelcomeMessage, messages.length, userLanguage, firstName, localUserProfile]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -136,6 +154,10 @@ const Chat = () => {
         timestamp: new Date()
       }]);
       
+      // Extract quiz data from user profile to enhance personalization
+      const quizData = localUserProfile?.quiz_data || {};
+      const mainGoal = localUserProfile?.main_goal || null;
+      
       // Call the Supabase Edge Function to get health information
       // Pass message history for context and conversation persistence
       const { data, error } = await supabase.functions.invoke('health-lookup', {
@@ -144,7 +166,9 @@ const Chat = () => {
           userProfile: localUserProfile,
           messageHistory: messages,
           isFirstInteraction,
-          conversationId
+          conversationId,
+          quizData,
+          mainGoal
         }
       });
       
@@ -257,6 +281,37 @@ const Chat = () => {
 
   // Suggest questions based on user's language and profile goals
   const getSuggestedQuestions = () => {
+    // Check if user has quiz data
+    const hasQuizData = localUserProfile?.quiz_data && 
+                       localUserProfile?.quiz_data?.goals && 
+                       localUserProfile?.quiz_data?.goals.length > 0;
+    
+    // If user hasn't completed the quiz, suggest taking it
+    if (!hasQuizData) {
+      const quizQuestions = {
+        en: [
+          "How do I take the wellness quiz?", 
+          "What benefits do I get from completing the quiz?", 
+          "Can you give me personalized advice?",
+          "Tell me more about the wellness assessment"
+        ],
+        pt: [
+          "Como faço o quiz de bem-estar?", 
+          "Quais benefícios eu ganho ao completar o quiz?", 
+          "Você pode me dar conselhos personalizados?",
+          "Conte-me mais sobre a avaliação de bem-estar"
+        ],
+        es: [
+          "¿Cómo hago el cuestionario de bienestar?", 
+          "¿Qué beneficios obtengo al completar el cuestionario?", 
+          "¿Puedes darme consejos personalizados?",
+          "Cuéntame más sobre la evaluación de bienestar"
+        ]
+      };
+      
+      return quizQuestions[userLanguage];
+    }
+    
     // Base questions
     const baseQuestions = {
       en: [
@@ -316,6 +371,52 @@ const Chat = () => {
       if (goalQuestions[userLanguage][goal]) {
         baseQuestions[userLanguage].unshift(goalQuestions[userLanguage][goal]);
       }
+    }
+    
+    // If user has completed the quiz, add questions based on their goals
+    if (hasQuizData && localUserProfile?.quiz_data?.goals) {
+      const quizGoals = localUserProfile.quiz_data.goals;
+      
+      quizGoals.forEach((goal: string) => {
+        // Add goal-specific question based on their quiz selections
+        const quizQuestionsByGoal = {
+          en: {
+            "Lose Weight": "Based on my quiz, what's a good diet plan for me?",
+            "Improve Focus": "What supplements help with focus and concentration?",
+            "Build Muscle": "What's the optimal protein intake for my muscle building goal?",
+            "Boost Energy": "What are natural ways to boost my energy levels?",
+            "Skin Care": "What daily habits will improve my skin health?",
+            "Sleep Support": "How can I optimize my bedroom for better sleep?",
+            "Digestive Health": "What foods should I avoid for better digestion?"
+          },
+          pt: {
+            "Lose Weight": "Com base no meu quiz, qual é um bom plano alimentar para mim?",
+            "Improve Focus": "Quais suplementos ajudam com foco e concentração?",
+            "Build Muscle": "Qual é a ingestão ideal de proteína para meu objetivo de ganho muscular?",
+            "Boost Energy": "Quais são as formas naturais de aumentar meus níveis de energia?",
+            "Skin Care": "Quais hábitos diários melhorarão a saúde da minha pele?",
+            "Sleep Support": "Como posso otimizar meu quarto para um sono melhor?",
+            "Digestive Health": "Quais alimentos devo evitar para uma melhor digestão?"
+          },
+          es: {
+            "Lose Weight": "Según mi cuestionario, ¿cuál es un buen plan de alimentación para mí?",
+            "Improve Focus": "¿Qué suplementos ayudan con el enfoque y la concentración?",
+            "Build Muscle": "¿Cuál es la ingesta óptima de proteínas para mi objetivo de desarrollo muscular?",
+            "Boost Energy": "¿Cuáles son las formas naturales de aumentar mis niveles de energía?",
+            "Skin Care": "¿Qué hábitos diarios mejorarán la salud de mi piel?",
+            "Sleep Support": "¿Cómo puedo optimizar mi dormitorio para un mejor sueño?",
+            "Digestive Health": "¿Qué alimentos debo evitar para una mejor digestión?"
+          }
+        };
+        
+        if (quizQuestionsByGoal[userLanguage][goal]) {
+          // Add to the beginning to prioritize
+          baseQuestions[userLanguage].unshift(quizQuestionsByGoal[userLanguage][goal]);
+        }
+      });
+      
+      // Limit to 4 questions
+      baseQuestions[userLanguage] = baseQuestions[userLanguage].slice(0, 4);
     }
     
     return baseQuestions[userLanguage];
