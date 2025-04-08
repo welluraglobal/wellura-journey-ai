@@ -24,12 +24,12 @@ const BackButton = ({ fallbackPath = "/", className = "" }: BackButtonProps) => 
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       onClick={handleBack}
-      className={`back-button ${className}`}
+      className={`flex items-center gap-2 mb-4 ${className}`}
     >
       <ArrowLeft className="h-4 w-4" />
-      <span>Back</span>
+      <span>Voltar</span>
     </Button>
   );
 };

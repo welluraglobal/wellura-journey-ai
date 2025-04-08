@@ -189,9 +189,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background p-4">
       <div className="w-full max-w-md mx-auto">
-        <div className="mb-4">
-          <BackButton fallbackPath="/" />
-        </div>
+        <BackButton fallbackPath="/" className="w-full max-w-[100px]" />
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-wellura-500 mb-2">Wellura App</h1>
