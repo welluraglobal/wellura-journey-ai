@@ -22,16 +22,26 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Extract access_token from URL
+    // Extract access_token from URL parameters
     const token = searchParams.get("access_token");
     
     if (token) {
       console.log("Access token found in URL");
       setAccessToken(token);
     } else {
-      console.error("No access token found in URL - params:", Object.fromEntries(searchParams.entries()));
-      setStatus("error");
-      setMessage("Invalid or missing reset token. Please request a new password reset link.");
+      // Look for hash params (#access_token=...)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hashToken = hashParams.get("access_token");
+      
+      if (hashToken) {
+        console.log("Access token found in URL hash");
+        setAccessToken(hashToken);
+      } else {
+        console.error("No access token found in URL - params:", Object.fromEntries(searchParams.entries()));
+        console.error("URL hash:", window.location.hash);
+        setStatus("error");
+        setMessage("Invalid or missing reset token. Please request a new password reset link.");
+      }
     }
   }, [searchParams]);
 
