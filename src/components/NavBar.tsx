@@ -57,6 +57,12 @@ const NavBar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Handle navigation for both links and buttons
+  const handleNavigation = (path: string) => {
+    setIsMenuOpen(false);
+    navigate(path);
+  };
+
   return (
     <nav className="py-4 px-6 border-b flex items-center justify-between bg-gradient-wellura text-white">
       <div className="flex items-center">
@@ -78,18 +84,18 @@ const NavBar = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center ml-10 space-x-6">
           {navItems.map((item) => (
-            <Link
+            <button
               key={item.path}
-              to={item.path}
+              onClick={() => handleNavigation(item.path)}
               className={`flex items-center space-x-1 ${
                 isActive(item.path)
                   ? "text-white font-medium"
                   : "text-white/80 hover:text-white transition-colors"
-              }`}
+              } bg-transparent border-0 cursor-pointer`}
             >
               <item.icon size={18} />
               <span>{item.name}</span>
-            </Link>
+            </button>
           ))}
         </div>
       </div>
@@ -107,10 +113,10 @@ const NavBar = () => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/profile-setup">Profile</Link>
+              <button onClick={() => navigate('/profile-setup')} className="w-full text-left">Profile</button>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings">Settings</Link>
+              <button onClick={() => navigate('/settings')} className="w-full text-left">Settings</button>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
@@ -129,19 +135,18 @@ const NavBar = () => {
           <SheetContent>
             <div className="flex flex-col space-y-4 mt-6">
               {navItems.map((item) => (
-                <Link
+                <button
                   key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-2 py-2 ${
+                  onClick={() => handleNavigation(item.path)}
+                  className={`flex items-center space-x-2 py-2 w-full text-left ${
                     isActive(item.path)
                       ? "text-wellura-500 font-medium"
                       : "text-muted-foreground"
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   <item.icon size={20} />
                   <span>{item.name}</span>
-                </Link>
+                </button>
               ))}
               <div className="pt-4 mt-4 border-t">
                 <Button

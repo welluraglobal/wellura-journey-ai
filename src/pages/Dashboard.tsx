@@ -1,6 +1,6 @@
 
 import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/App";
 import { Button } from "@/components/ui/button";
 import NavBar from "@/components/NavBar";
@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 const Dashboard = () => {
   const { firstName } = useContext(UserContext);
+  const navigate = useNavigate();
 
   // Feature cards data with the requested functionality
   const featureCards = [
@@ -58,6 +59,11 @@ const Dashboard = () => {
     }
   ];
 
+  // Handle navigation function
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <NavBar />
@@ -91,8 +97,12 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">{card.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to={card.link}>Access</Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => handleNavigate(card.link)}
+                    >
+                      Access
                     </Button>
                   </CardFooter>
                 </Card>
@@ -105,32 +115,40 @@ const Dashboard = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-6">Quick Actions</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/quiz">
-                  <BookText className="h-6 w-6 mb-1" />
-                  <span>Wellness Quiz</span>
-                </Link>
+              <Button 
+                size="lg" 
+                className="h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => handleNavigate('/quiz')}
+              >
+                <BookText className="h-6 w-6 mb-1" />
+                <span>Wellness Quiz</span>
               </Button>
               
-              <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/chat">
-                  <MessageCircle className="h-6 w-6 mb-1" />
-                  <span>AI Consultant</span>
-                </Link>
+              <Button 
+                size="lg" 
+                className="h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => handleNavigate('/chat')}
+              >
+                <MessageCircle className="h-6 w-6 mb-1" />
+                <span>AI Consultant</span>
               </Button>
               
-              <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/nearby-gyms">
-                  <MapPin className="h-6 w-6 mb-1" />
-                  <span>Nearby Gyms</span>
-                </Link>
+              <Button 
+                size="lg" 
+                className="h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => handleNavigate('/nearby-gyms')}
+              >
+                <MapPin className="h-6 w-6 mb-1" />
+                <span>Nearby Gyms</span>
               </Button>
               
-              <Button asChild size="lg" className="h-24 flex flex-col items-center justify-center gap-2">
-                <Link to="/find-professionals">
-                  <Users className="h-6 w-6 mb-1" />
-                  <span>Health Professionals</span>
-                </Link>
+              <Button 
+                size="lg" 
+                className="h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => handleNavigate('/find-professionals')}
+              >
+                <Users className="h-6 w-6 mb-1" />
+                <span>Health Professionals</span>
               </Button>
             </div>
           </section>
