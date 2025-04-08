@@ -37,8 +37,12 @@ const Auth = () => {
 
   // Set mode based on URL parameter
   useEffect(() => {
-    const newMode = searchParams.get("mode") === "login" ? "login" : "signup";
-    setMode(newMode);
+    const modeParam = searchParams.get("mode");
+    if (modeParam === "signup") {
+      setMode("signup");
+    } else if (modeParam === "login") {
+      setMode("login");
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,7 +157,12 @@ const Auth = () => {
           <p className="text-muted-foreground">Your personalized wellness journey</p>
         </div>
         
-        <Tabs defaultValue={mode} value={mode} onValueChange={(value) => setMode(value as "login" | "signup")} className="w-full">
+        <Tabs 
+          defaultValue={mode} 
+          value={mode} 
+          onValueChange={(value) => setMode(value as "login" | "signup")} 
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
