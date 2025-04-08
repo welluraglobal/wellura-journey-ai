@@ -166,23 +166,32 @@ const ResetPassword = () => {
         console.log("Direct update approach failed:", directUpdateError);
       }
 
-      // 2. Try with the correct recovery flow approach
+      // 2. Try to verify the token first, then update the password
       if (!resetSuccessful) {
         try {
-          console.log("Trying recovery flow with token:", accessToken);
-          // Changed: Use the correct resetPasswordForEmail flow
-          const { error } = await supabase.auth.resetPasswordForEmail(password, {
-            token: accessToken
+          console.log("Trying to verify token first, then update password");
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: accessToken,
+            type: 'recovery'
           });
-
+          
           if (!error) {
-            console.log("Password reset successful with recovery flow");
-            resetSuccessful = true;
+            console.log("Token verified successfully, now updating password");
+            const { error: updateError } = await supabase.auth.updateUser({
+              password: password
+            });
+            
+            if (!updateError) {
+              console.log("Password updated successfully after token verification");
+              resetSuccessful = true;
+            } else {
+              console.error("Error updating password after verification:", updateError);
+            }
           } else {
-            console.error("Recovery flow failed:", error);
+            console.error("Token verification failed:", error);
           }
-        } catch (recoveryError) {
-          console.error("Recovery approach failed:", recoveryError);
+        } catch (verifyError) {
+          console.error("Verification approach failed:", verifyError);
         }
       }
 
@@ -213,40 +222,6 @@ const ResetPassword = () => {
           }
         } catch (sessionError) {
           console.error("Session approach failed:", sessionError);
-        }
-      }
-
-      // 4. Try with the standard recovery flow
-      if (!resetSuccessful) {
-        try {
-          console.log("Trying standard recovery flow");
-          // Get the type parameter from URL to determine if it's a recovery flow
-          const type = searchParams.get("type");
-          
-          if (type === "recovery") {
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: accessToken,
-              type: 'recovery',
-            });
-            
-            if (!error) {
-              // After verification, update the password
-              const { error: updateError } = await supabase.auth.updateUser({
-                password: password
-              });
-              
-              if (!updateError) {
-                console.log("Password updated successfully with verification approach");
-                resetSuccessful = true;
-              } else {
-                console.error("Error updating password after verification:", updateError);
-              }
-            } else {
-              console.error("Recovery verification failed:", error);
-            }
-          }
-        } catch (verificationError) {
-          console.error("Verification approach failed:", verificationError);
         }
       }
 
@@ -283,7 +258,13 @@ const ResetPassword = () => {
 
   // Function to handle requesting a new reset link
   const handleRequestNewResetLink = () => {
-    navigate("/auth?mode=forgotPassword");
+    navigate("/auth");
+    // Open the forgot password dialog programmatically
+    // Since we can't directly control the dialog from another component,
+    // we'll add a query parameter and handle it in the Auth component
+    setTimeout(() => {
+      document.querySelector('[aria-label="Forgot Password"]')?.click();
+    }, 500);
   };
 
   return (
