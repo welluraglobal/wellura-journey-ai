@@ -16,6 +16,7 @@ import FindProfessionals from "@/pages/FindProfessionals";
 import PlanGenerator from "@/pages/PlanGenerator";
 import StepTracker from "@/pages/StepTracker";
 import MealPlans from "@/pages/MealPlans";
+import Training from "@/pages/Training";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { useEffect } from "react";
@@ -70,6 +71,7 @@ function AppContent() {
             <Route path="/plan-generator" element={isLoggedIn ? <PlanGenerator /> : <Navigate to="/auth" replace />} />
             <Route path="/step-tracker" element={isLoggedIn ? <StepTracker /> : <Navigate to="/auth" replace />} />
             <Route path="/meals" element={isLoggedIn ? <MealPlans /> : <Navigate to="/auth" replace />} />
+            <Route path="/training" element={isLoggedIn ? <Training /> : <Navigate to="/auth" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
