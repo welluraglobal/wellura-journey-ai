@@ -1,4 +1,3 @@
-
 /* Chat bubbles */
 .chat-bubble {
   max-width: 80%;
@@ -35,6 +34,13 @@
   .chat-bubble {
     max-width: 90%;
   }
+  .welly-vision-dialog {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    max-width: none;
+    border-radius: 0;
+  }
 }
 
 .animate-pulse-slow {
@@ -48,4 +54,9 @@
   50% {
     opacity: 0.5;
   }
+}
+
+/* Add video mirror mode for selfie camera */
+.mirror-mode {
+  transform: scaleX(-1);
 }

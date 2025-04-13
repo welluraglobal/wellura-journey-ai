@@ -22,6 +22,10 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: 'body',
       resizeOnFullScreen: true
+    },
+    Permissions: {
+      camera: 'prompt',
+      microphone: 'prompt'
     }
   }
 };

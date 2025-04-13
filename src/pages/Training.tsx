@@ -4,18 +4,20 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dumbbell, Calendar, ArrowRight, Clock, Trophy, Film, ClipboardCheck, CheckCircle2, Info } from "lucide-react";
+import { Dumbbell, Calendar, ArrowRight, Clock, Trophy, Film, ClipboardCheck, CheckCircle2, Info, Camera, Music } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import FitnessQuiz from "@/components/training/FitnessQuiz";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ExerciseInstructionDialog from "@/components/training/ExerciseInstructionDialog";
+import WellyVisionDialog from "@/components/training/WellyVisionDialog";
+import WelluraPlaylistButton from "@/components/training/WelluraPlaylistButton";
 
 const exerciseImages = {
   "Push-ups": "https://images.unsplash.com/photo-1616803689943-5601631c7fec?w=500&auto=format&fit=crop",
   "Dumbbell Rows": "https://images.unsplash.com/photo-1534368959876-26bf04f2c947?w=500&auto=format&fit=crop",
   "Shoulder Press": "https://images.unsplash.com/photo-1590771998996-8589ec9b5ac6?w=500&auto=format&fit=crop",
-  "Bicep Curls": "https://images.unsplash.com/photo-1581009137042-c552e485697a?w=500&auto=format&fit=crop",
+  "Bicep Curls": "https://images.unsplash.com/photo-1581009137042-c552e4856a0e?w=500&auto=format&fit=crop",
   "Tricep Extensions": "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=500&auto=format&fit=crop",
   "Squats": "https://images.unsplash.com/photo-1566241142559-40a9552895b3?w=500&auto=format&fit=crop",
   "Lunges": "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?w=500&auto=format&fit=crop",
@@ -91,6 +93,46 @@ const exerciseDescriptions = {
   "Plank Jacks": "Start in a plank position. Jump your feet back into a squat position, then jump back up into a plank position."
 };
 
+const exerciseEquipment = {
+  "Push-ups": "none",
+  "Dumbbell Rows": "dumbbells",
+  "Shoulder Press": "dumbbells",
+  "Bicep Curls": "dumbbells",
+  "Tricep Extensions": "dumbbells",
+  "Squats": "none",
+  "Lunges": "none",
+  "Glute Bridges": "none",
+  "Calf Raises": "none",
+  "Plank": "none",
+  "Deadlifts": "barbell",
+  "Bench Press": "bench,barbell",
+  "Pull-ups": "pull-up-bar",
+  "Leg Press": "leg-press-machine",
+  "Core Workout": "none",
+  "Incline Dumbbell Press": "bench,dumbbells",
+  "Chest Flyes": "dumbbells",
+  "Tricep Dips": "parallel-bars",
+  "Tricep Pushdowns": "cable-machine",
+  "Bent-over Rows": "dumbbells",
+  "Lat Pulldowns": "lat-pulldown-machine",
+  "Hammer Curls": "dumbbells",
+  "Leg Curls": "leg-curl-machine",
+  "Plank Circuit": "none",
+  "Lateral Raises": "dumbbells",
+  "Front Raises": "dumbbells",
+  "Skull Crushers": "bench,dumbbells",
+  "Concentration Curls": "dumbbells",
+  "Jump Squats": "none",
+  "Burpees": "none",
+  "Mountain Climbers": "none",
+  "Jumping Lunges": "none",
+  "High Knees": "none",
+  "Push-up Jacks": "none",
+  "Plank Shoulder Taps": "none",
+  "Jumping Jacks": "none",
+  "Plank Jacks": "none"
+};
+
 const mockTrainingPlans = [
   {
     id: "1",
@@ -147,6 +189,9 @@ const Training = () => {
   const [completedExercises, setCompletedExercises] = useState<Record<string, string[]>>({});
   const [selectedExercise, setSelectedExercise] = useState<{name: string, image: string, description: string} | null>(null);
   const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [wellyVisionOpen, setWellyVisionOpen] = useState(false);
+  const [currentExercise, setCurrentExercise] = useState<{name: string, workoutId: string, index: number}>({name: "", workoutId: "", index: 0});
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -263,6 +308,38 @@ const Training = () => {
       description: exerciseDescriptions[exercise] || "Perform this exercise with proper form, focusing on controlled movements and proper breathing technique."
     });
     setInstructionsOpen(true);
+  };
+
+  const handleStartWellyVision = (exerciseName: string, workoutId: string, exerciseIndex: number) => {
+    setCurrentExercise({
+      name: exerciseName,
+      workoutId: workoutId,
+      index: exerciseIndex
+    });
+    setWellyVisionOpen(true);
+  };
+
+  const handleWellyVisionComplete = () => {
+    if (currentExercise.workoutId && activePlan) {
+      const exerciseKey = `${currentExercise.workoutId}-${currentExercise.index}`;
+      
+      setCompletedExercises(prev => {
+        const planExercises = [...(prev[activePlan] || [])];
+        
+        if (!planExercises.includes(exerciseKey)) {
+          return {
+            ...prev,
+            [activePlan]: [...planExercises, exerciseKey]
+          };
+        }
+        return prev;
+      });
+      
+      toast({
+        title: "Exercise Completed with Welly Vision",
+        description: `Great job! ${currentExercise.name} marked as completed.`,
+      });
+    }
   };
 
   const activePlanObj = activePlan 
@@ -539,15 +616,29 @@ const Training = () => {
                                               "Perform this exercise with proper form, focusing on controlled movements and proper breathing technique."}
                                           </p>
                                           
-                                          <Button 
-                                            variant="ghost" 
-                                            size="sm"
-                                            className="text-xs"
-                                            onClick={() => handleViewInstructions(exercise)}
-                                          >
-                                            <Info className="h-3 w-3 mr-1" />
-                                            View Detailed Instructions
-                                          </Button>
+                                          <div className="flex flex-wrap gap-2 mt-4">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm"
+                                              className="text-xs"
+                                              onClick={() => handleViewInstructions(exercise)}
+                                            >
+                                              <Info className="h-3 w-3 mr-1" />
+                                              View Instructions
+                                            </Button>
+                                            
+                                            <Button 
+                                              variant="default" 
+                                              size="sm"
+                                              className="text-xs"
+                                              onClick={() => handleStartWellyVision(exercise, workout.id, index)}
+                                            >
+                                              <Camera className="h-3 w-3 mr-1" />
+                                              START WITH WELLY VISION
+                                            </Button>
+                                            
+                                            <WelluraPlaylistButton size="sm" className="text-xs" />
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
@@ -601,15 +692,15 @@ const Training = () => {
                                 "Perform this exercise with proper form, focusing on controlled movements."}
                             </p>
                           </CardContent>
-                          <CardFooter className="pt-0">
+                          <CardFooter className="pt-0 flex flex-wrap gap-2">
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="w-full"
                               onClick={() => handleViewInstructions(exercise)}
                             >
                               View Details
                             </Button>
+                            <WelluraPlaylistButton size="sm" />
                           </CardFooter>
                         </Card>
                       ))}
@@ -632,15 +723,18 @@ const Training = () => {
                                   </div>
                                   <CardContent className="p-4">
                                     <h3 className="font-medium">{exercise}</h3>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="mt-2 w-full"
-                                      onClick={() => handleViewInstructions(exercise)}
-                                    >
-                                      <Info className="h-3 w-3 mr-1" />
-                                      View Instructions
-                                    </Button>
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-xs"
+                                        onClick={() => handleViewInstructions(exercise)}
+                                      >
+                                        <Info className="h-3 w-3 mr-1" />
+                                        View Instructions
+                                      </Button>
+                                      <WelluraPlaylistButton size="sm" className="text-xs" />
+                                    </div>
                                   </CardContent>
                                 </Card>
                               </div>
@@ -666,6 +760,14 @@ const Training = () => {
               description={selectedExercise.description}
             />
           )}
+          
+          <WellyVisionDialog
+            exerciseName={currentExercise.name}
+            targetReps={10}
+            open={wellyVisionOpen}
+            onOpenChange={setWellyVisionOpen}
+            onComplete={handleWellyVisionComplete}
+          />
         </div>
       </main>
     </div>
