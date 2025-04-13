@@ -2,12 +2,17 @@
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
 import { Separator } from "@/components/ui/separator";
-import { Utensils, Apple, Clock, Filter, Plus } from "lucide-react";
+import { Utensils, Apple, Clock, Filter, Plus, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import CustomizeMealPlanDialog from "@/components/meal-plans/CustomizeMealPlanDialog";
+import CreateCustomPlanDialog from "@/components/meal-plans/CreateCustomPlanDialog";
+import MealPlanDetailDialog from "@/components/meal-plans/MealPlanDetailDialog";
+import { useUser } from "@/contexts/UserContext";
 
 // Mock meal plan data
 const mockMealPlans = [
@@ -62,24 +67,26 @@ const mockMealPlans = [
 ];
 
 const MealPlans = () => {
+  const [mealPlans, setMealPlans] = useState(mockMealPlans);
   const [activePlan, setActivePlan] = useState<string | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+  const [selectedPlanForCustomize, setSelectedPlanForCustomize] = useState<string | null>(null);
+  const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedPlanForDetail, setSelectedPlanForDetail] = useState<string | null>(null);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const handleSelectPlan = (planId: string) => {
-    setActivePlan(planId === activePlan ? null : planId);
-  };
+  const { firstName } = useUser();
 
   const handleViewDetails = (planId: string) => {
-    setExpandedPlan(expandedPlan === planId ? null : planId);
+    setSelectedPlanForDetail(planId);
+    setIsDetailDialogOpen(true);
   };
 
   const handleCreateCustomPlan = () => {
-    toast({
-      title: "Create Custom Plan",
-      description: "Custom plan creation feature is coming soon!",
-    });
+    setIsCreateDialogOpen(true);
   };
 
   const handleFilter = () => {
@@ -89,20 +96,60 @@ const MealPlans = () => {
     });
   };
 
-  const handleCustomize = (planName: string) => {
-    toast({
-      title: "Customizing Plan",
-      description: `You're now customizing the ${planName} meal plan.`,
-    });
+  const handleCustomize = (planId: string) => {
+    setSelectedPlanForCustomize(planId);
+    setIsCustomizeDialogOpen(true);
   };
 
   const handleActivatePlan = (planId: string, planName: string) => {
+    // Deactivate previous plan
     setActivePlan(planId);
+    
     toast({
       title: "Plan Activated",
       description: `${planName} has been activated as your current meal plan.`,
     });
   };
+
+  const handleSaveCustomizedPlan = (updatedPlan: typeof mealPlans[0]) => {
+    setMealPlans(mealPlans.map(plan => 
+      plan.id === updatedPlan.id ? updatedPlan : plan
+    ));
+    
+    toast({
+      title: "Plan Customized",
+      description: "Your custom plan has been saved.",
+    });
+  };
+
+  const handleSaveNewPlan = (newPlan: typeof mealPlans[0]) => {
+    setMealPlans([...mealPlans, newPlan]);
+    
+    toast({
+      title: "Custom Plan Created",
+      description: "Custom plan created successfully!",
+    });
+  };
+
+  const handleReplaceMeal = (mealId: string) => {
+    toast({
+      title: "Replace Meal",
+      description: "Meal replacement feature is coming soon!",
+    });
+  };
+
+  const handleAddToShoppingList = (mealId: string) => {
+    toast({
+      title: "Added to Shopping List",
+      description: "Meal ingredients added to your shopping list.",
+    });
+  };
+
+  // Get the currently selected plan for customization
+  const selectedPlanForCustomizeData = mealPlans.find(plan => plan.id === selectedPlanForCustomize);
+  
+  // Get the currently selected plan for detail view
+  const selectedPlanForDetailData = mealPlans.find(plan => plan.id === selectedPlanForDetail);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -136,12 +183,19 @@ const MealPlans = () => {
           </div>
           
           <div className="grid grid-cols-1 gap-6">
-            {mockMealPlans.map((plan) => (
+            {mealPlans.map((plan) => (
               <Card key={plan.id} className="overflow-hidden">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-xl">{plan.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        {activePlan === plan.id && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <Check className="h-3 w-3" /> Active
+                          </Badge>
+                        )}
+                      </div>
                       <CardDescription className="mt-1">{plan.description}</CardDescription>
                     </div>
                     <div className="flex gap-2">
@@ -150,7 +204,7 @@ const MealPlans = () => {
                         size="sm"
                         onClick={() => handleViewDetails(plan.id)}
                       >
-                        {expandedPlan === plan.id ? "Hide Details" : "View Details"}
+                        View Details
                       </Button>
                     </div>
                   </div>
@@ -175,41 +229,13 @@ const MealPlans = () => {
                       <div className="font-medium mt-1">{plan.fat}g</div>
                     </div>
                   </div>
-                  
-                  {expandedPlan === plan.id && (
-                    <div className="mt-4 border rounded-md">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Meal</TableHead>
-                            <TableHead>Time</TableHead>
-                            <TableHead>Description</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {plan.meals.map((meal) => (
-                            <TableRow key={meal.id}>
-                              <TableCell className="font-medium">{meal.name}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-                                  {meal.time}
-                                </div>
-                              </TableCell>
-                              <TableCell>{meal.description}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
                 </CardContent>
                 
                 <CardFooter className="flex justify-end gap-2 bg-muted/10 pt-4">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleCustomize(plan.name)}
+                    onClick={() => handleCustomize(plan.id)}
                   >
                     <Apple className="h-4 w-4 mr-2" />
                     Customize
@@ -227,6 +253,30 @@ const MealPlans = () => {
           </div>
         </div>
       </main>
+
+      {/* Customize Meal Plan Dialog */}
+      <CustomizeMealPlanDialog
+        open={isCustomizeDialogOpen}
+        onOpenChange={setIsCustomizeDialogOpen}
+        plan={selectedPlanForCustomizeData || null}
+        onSave={handleSaveCustomizedPlan}
+      />
+
+      {/* Create Custom Plan Dialog */}
+      <CreateCustomPlanDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSave={handleSaveNewPlan}
+      />
+
+      {/* Meal Plan Detail Dialog */}
+      <MealPlanDetailDialog
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+        plan={selectedPlanForDetailData || null}
+        onReplaceMeal={handleReplaceMeal}
+        onAddToShoppingList={handleAddToShoppingList}
+      />
     </div>
   );
 };
