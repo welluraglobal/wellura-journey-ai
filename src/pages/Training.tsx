@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import NavBar from "@/components/NavBar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dumbbell, Calendar, ArrowRight, Clock, Trophy, Film, ClipboardCheck } from "lucide-react";
+import { Dumbbell, Calendar, ArrowRight, Clock, Trophy, Film, ClipboardCheck, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import FitnessQuiz from "@/components/training/FitnessQuiz";
@@ -63,6 +62,8 @@ const Training = () => {
   const [showQuiz, setShowQuiz] = useState(true);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [recommendedPlan, setRecommendedPlan] = useState<string | null>(null);
+  const [activePlan, setActivePlan] = useState<string | null>(null);
+  const [completedExercises, setCompletedExercises] = useState<Record<string, string[]>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -72,12 +73,20 @@ const Training = () => {
 
   const handleStartPlan = (planId: string, planName: string) => {
     console.log(`Starting plan: ${planId} - ${planName}`);
+    setActivePlan(planId);
+    
+    if (!completedExercises[planId]) {
+      setCompletedExercises(prev => ({
+        ...prev,
+        [planId]: []
+      }));
+    }
+    
     toast({
       title: "Training Plan Started",
       description: `You've started the ${planName} training plan.`,
     });
-    // Here you would typically save the selected plan to user's profile
-    // and redirect to a more detailed view of the plan
+    
     setActiveTab("progress");
   };
 
@@ -87,7 +96,6 @@ const Training = () => {
       title: "Plan Scheduled",
       description: `${planName} has been added to your calendar.`,
     });
-    // Here you would typically integrate with a calendar or scheduling system
   };
 
   const handleViewDetails = (planId: string) => {
@@ -97,7 +105,6 @@ const Training = () => {
   const handleQuizComplete = (results: any) => {
     console.log("Quiz results:", results);
     
-    // Simple logic to recommend a plan based on quiz results
     let recommendedPlanId = "1"; // Default to beginner plan
     
     if (results.fitnessLevel === "advanced" || results.fitnessLevel === "athletic") {
@@ -125,7 +132,51 @@ const Training = () => {
     setRecommendedPlan(null);
   };
 
-  // Find the recommended plan object
+  const toggleExerciseCompletion = (workoutId: string, exerciseIndex: number) => {
+    if (!activePlan) return;
+    
+    const exerciseKey = `${workoutId}-${exerciseIndex}`;
+    
+    setCompletedExercises(prev => {
+      const planExercises = [...(prev[activePlan] || [])];
+      
+      if (planExercises.includes(exerciseKey)) {
+        return {
+          ...prev,
+          [activePlan]: planExercises.filter(key => key !== exerciseKey)
+        };
+      } else {
+        return {
+          ...prev,
+          [activePlan]: [...planExercises, exerciseKey]
+        };
+      }
+    });
+    
+    toast({
+      title: "Progress Updated",
+      description: completedExercises[activePlan]?.includes(exerciseKey) 
+        ? "Exercise marked as incomplete" 
+        : "Exercise marked as completed",
+    });
+  };
+
+  const calculateProgress = () => {
+    if (!activePlan) return 0;
+    
+    const plan = mockTrainingPlans.find(p => p.id === activePlan);
+    if (!plan) return 0;
+    
+    const totalExercises = plan.workouts.reduce((total, workout) => total + workout.exercises.length, 0);
+    const completedCount = completedExercises[activePlan]?.length || 0;
+    
+    return Math.round((completedCount / totalExercises) * 100);
+  };
+
+  const activePlanObj = activePlan 
+    ? mockTrainingPlans.find(plan => plan.id === activePlan) 
+    : null;
+
   const recommendedPlanObj = recommendedPlan 
     ? mockTrainingPlans.find(plan => plan.id === recommendedPlan) 
     : null;
@@ -316,13 +367,87 @@ const Training = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="progress" className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-2">No Active Training Plan</h3>
-                <p className="text-muted-foreground mb-4">Start a training plan to track your progress and achievements</p>
-                <Button onClick={() => setActiveTab("plans")}>
-                  Browse Training Plans
-                </Button>
+              <TabsContent value="progress" className="h-full">
+                {activePlan && activePlanObj ? (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Dumbbell className="mr-2 h-5 w-5 text-primary" />
+                          {activePlanObj.name} - My Progress
+                        </CardTitle>
+                        <CardDescription>
+                          Track your progress and mark completed exercises
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-6">
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-medium">Overall Progress</h3>
+                            <span className="text-primary font-semibold">{calculateProgress()}%</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2.5">
+                            <div 
+                              className="bg-primary h-2.5 rounded-full" 
+                              style={{ width: `${calculateProgress()}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-8">
+                          {activePlanObj.workouts.map((workout) => (
+                            <div key={workout.id} className="border rounded-lg p-4">
+                              <h3 className="font-semibold mb-4">{workout.name}</h3>
+                              <div className="space-y-3">
+                                {workout.exercises.map((exercise, index) => {
+                                  const exerciseKey = `${workout.id}-${index}`;
+                                  const isCompleted = completedExercises[activePlan]?.includes(exerciseKey);
+                                  
+                                  return (
+                                    <div 
+                                      key={`${workout.id}-${index}`} 
+                                      className={`flex items-center justify-between p-3 rounded-md border ${
+                                        isCompleted ? 'bg-primary/10 border-primary/30' : ''
+                                      }`}
+                                    >
+                                      <div className="flex items-center">
+                                        <Dumbbell className="h-4 w-4 mr-3 text-primary" />
+                                        <span>{exercise}</span>
+                                      </div>
+                                      <Button
+                                        variant={isCompleted ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => toggleExerciseCompletion(workout.id, index)}
+                                      >
+                                        {isCompleted ? (
+                                          <>
+                                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                                            Completed
+                                          </>
+                                        ) : (
+                                          "Mark Complete"
+                                        )}
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+                    <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-medium mb-2">No Active Training Plan</h3>
+                    <p className="text-muted-foreground mb-4">Start a training plan to track your progress and achievements</p>
+                    <Button onClick={() => setActiveTab("plans")}>
+                      Browse Training Plans
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="exercises" className="h-full flex flex-col items-center justify-center p-8 text-center">
