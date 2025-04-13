@@ -54,11 +54,11 @@ detectMobilePlatform();
 
 // Set viewport meta tag programmatically for better mobile handling
 const setViewportMeta = () => {
-  let viewportMeta = document.querySelector('meta[name="viewport"]');
+  let viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
   
   if (!viewportMeta) {
     viewportMeta = document.createElement('meta');
-    viewportMeta.name = 'viewport';
+    viewportMeta.setAttribute('name', 'viewport');
     document.head.appendChild(viewportMeta);
   }
   
