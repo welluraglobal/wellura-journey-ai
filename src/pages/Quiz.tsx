@@ -118,16 +118,21 @@ const Quiz = () => {
     setIsGeneratingPlans(true);
     
     try {
+      console.log("Generating plans with quiz data:", quizData);
+      
       // Generate body composition
       const bodyComposition = calculateBodyComposition(quizData);
+      console.log("Body composition calculated:", bodyComposition);
       
       // Generate meal plan
       const mealPlan = generateMealPlan(quizData, userProfile, bodyComposition);
+      console.log("Meal plan generated:", mealPlan);
       
       // We'll add error handling for the training plan generation
       let trainingPlan;
       try {
         trainingPlan = generateTrainingPlan(quizData, userProfile);
+        console.log("Training plan generated:", trainingPlan);
       } catch (error) {
         console.error("Error generating training plan:", error);
         trainingPlan = { workouts: [], schedule: [], intensity: "moderate" };
@@ -135,24 +140,61 @@ const Quiz = () => {
       
       // Generate supplement recommendations
       const supplementRecommendations = generateSupplementRecommendations(quizData);
+      console.log("Supplement recommendations generated:", supplementRecommendations);
       
       // Save generated plans to database
       if (userId) {
-        const saved = await savePlansToProfile(userId, quizData, {
-          mealPlan,
-          trainingPlan,
-          bodyComposition,
-          supplementRecommendations
-        });
+        console.log("Saving plans for user", userId);
+        console.log("Plans:", { mealPlan, trainingPlan, bodyComposition, supplementRecommendations });
         
-        if (saved) {
-          toast({
-            title: "Plans Generated",
-            description: "Your personalized plans have been created based on your quiz responses",
+        try {
+          const saved = await savePlansToProfile(userId, quizData, {
+            mealPlan,
+            trainingPlan,
+            bodyComposition,
+            supplementRecommendations
           });
           
-          // Navigate to results page
-          navigate("/quiz-results");
+          if (saved) {
+            // Update local user profile with generated data
+            if (userProfile) {
+              const updatedProfile = {
+                ...userProfile,
+                bodyComposition,
+                mealPlan,
+                trainingPlan,
+                supplementRecommendations
+              };
+              setUserProfile(updatedProfile);
+            }
+            
+            toast({
+              title: "Plans Generated",
+              description: "Your personalized plans have been created based on your quiz responses",
+            });
+            
+            // Navigate to results page
+            navigate("/quiz-results");
+          }
+        } catch (error) {
+          console.error("Error saving plans to profile:", error);
+          toast({
+            title: "Warning",
+            description: "Plans were generated but couldn't be saved. You can still view them.",
+          });
+          
+          // Update local user profile even if saving failed
+          if (userProfile) {
+            const updatedProfile = {
+              ...userProfile,
+              bodyComposition,
+              mealPlan,
+              trainingPlan,
+              supplementRecommendations
+            };
+            setUserProfile(updatedProfile);
+            navigate("/quiz-results");
+          }
         }
       }
     } catch (error) {

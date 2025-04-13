@@ -5,8 +5,9 @@ import NavBar from "@/components/NavBar";
 import QuizResultsSection from "@/components/quiz/QuizResultsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 // Update the getBMI function to handle different value types
 const getBMI = (bmi: any) => {
@@ -21,7 +22,7 @@ const getBMI = (bmi: any) => {
     : 'N/A';
 };
 
-const QuizResults: React.FC = () => {
+const QuizResults = () => {
   const { userProfile } = useContext(UserContext);
   const navigate = useNavigate();
   
@@ -31,21 +32,43 @@ const QuizResults: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (userProfile?.quiz_data) {
-      // Extract data from the userProfile
-      const quizData = userProfile.quiz_data;
+    setLoading(true);
+    
+    if (userProfile) {
+      // Log the entire userProfile to debug
+      console.log("UserProfile data:", userProfile);
       
+      // Extract data from the userProfile
       if (userProfile.bodyComposition) {
+        console.log("Body composition found:", userProfile.bodyComposition);
         setBodyComposition(userProfile.bodyComposition);
+      } else {
+        console.log("No body composition found in user profile");
       }
       
       if (userProfile.supplementRecommendations) {
+        console.log("Supplement recommendations found:", userProfile.supplementRecommendations);
         setSupplementRecommendations(userProfile.supplementRecommendations);
+      } else {
+        console.log("No supplement recommendations found in user profile");
       }
       
-      if (quizData.goals) {
-        setSelectedGoals(Array.isArray(quizData.goals) ? quizData.goals : [quizData.goals]);
+      if (userProfile?.quiz_data?.goals) {
+        console.log("Goals found:", userProfile.quiz_data.goals);
+        setSelectedGoals(Array.isArray(userProfile.quiz_data.goals) 
+          ? userProfile.quiz_data.goals 
+          : [userProfile.quiz_data.goals]);
+      } else if (userProfile?.quiz_data?.answers?.fitnessGoals) {
+        // Fallback to answers.fitnessGoals if goals not directly available
+        console.log("Using fitnessGoals from answers:", userProfile.quiz_data.answers.fitnessGoals);
+        setSelectedGoals(Array.isArray(userProfile.quiz_data.answers.fitnessGoals) 
+          ? userProfile.quiz_data.answers.fitnessGoals 
+          : [userProfile.quiz_data.answers.fitnessGoals]);
+      } else {
+        console.log("No goals found in user profile");
       }
+    } else {
+      console.log("No user profile data available");
     }
     
     setLoading(false);
@@ -64,7 +87,8 @@ const QuizResults: React.FC = () => {
           {loading ? (
             <Card>
               <CardContent className="p-8 flex justify-center items-center">
-                <div className="animate-pulse">Loading your personalized results...</div>
+                <Loader2 className="h-6 w-6 mr-2 animate-spin" />
+                <div>Loading your personalized results...</div>
               </CardContent>
             </Card>
           ) : !bodyComposition ? (
