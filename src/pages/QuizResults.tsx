@@ -94,6 +94,22 @@ const QuizResults = () => {
 
   const weeklyTarget = calculateWeeklyTarget();
 
+  const getBodyFatPercentage = () => {
+    const bodyFatPercentage = bodyComposition?.currentStats?.bodyFatPercentage;
+    
+    return typeof bodyFatPercentage === 'number' 
+      ? bodyFatPercentage.toFixed(1) 
+      : 'N/A';
+  };
+
+  const getBMI = () => {
+    const bmi = bodyComposition?.currentStats?.bmi;
+    
+    return typeof bmi === 'number' 
+      ? bmi.toFixed(1) 
+      : 'N/A';
+  };
+
   const getBodyCompositionChartData = () => {
     if (!bodyComposition?.currentStats) return [];
     
@@ -192,11 +208,11 @@ const QuizResults = () => {
                       <div className="grid grid-cols-2 gap-4 mt-4">
                         <div>
                           <p className="text-sm text-muted-foreground">BMI</p>
-                          <p className="text-2xl font-bold">{bodyComposition?.currentStats.bmi.toFixed(1)}</p>
+                          <p className="text-2xl font-bold">{getBMI()}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Body Fat %</p>
-                          <p className="text-2xl font-bold">{bodyComposition?.currentStats.bodyFatPercentage.toFixed(1)}%</p>
+                          <p className="text-2xl font-bold">{getBodyFatPercentage()}%</p>
                         </div>
                       </div>
                     </CardContent>
@@ -349,9 +365,7 @@ const QuizResults = () => {
                             <ul className="space-y-2">
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Body Fat Percentage:</span>
-                                <span className="font-medium">{typeof bodyComposition?.targetStats.targetBodyFatPercentage === 'number' 
-                                  ? bodyComposition?.targetStats.targetBodyFatPercentage.toFixed(1) 
-                                  : bodyComposition?.targetStats.targetBodyFatPercentage}%</span>
+                                <span className="font-medium">{getBodyFatPercentage()}%</span>
                               </li>
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Lean Mass:</span>
@@ -363,7 +377,7 @@ const QuizResults = () => {
                               </li>
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">BMI:</span>
-                                <span className="font-medium">{bodyComposition?.currentStats.bmi.toFixed(1)} ({bodyComposition?.currentStats.bmiCategory})</span>
+                                <span className="font-medium">{getBMI()} ({bodyComposition?.currentStats.bmiCategory})</span>
                               </li>
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Basal Metabolic Rate:</span>
