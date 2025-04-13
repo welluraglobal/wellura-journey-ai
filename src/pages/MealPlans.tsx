@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock meal plan data
 const mockMealPlans = [
@@ -62,10 +63,45 @@ const mockMealPlans = [
 
 const MealPlans = () => {
   const [activePlan, setActivePlan] = useState<string | null>(null);
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSelectPlan = (planId: string) => {
     setActivePlan(planId === activePlan ? null : planId);
+  };
+
+  const handleViewDetails = (planId: string) => {
+    setExpandedPlan(expandedPlan === planId ? null : planId);
+  };
+
+  const handleCreateCustomPlan = () => {
+    toast({
+      title: "Create Custom Plan",
+      description: "Custom plan creation feature is coming soon!",
+    });
+  };
+
+  const handleFilter = () => {
+    toast({
+      title: "Filter Meal Plans",
+      description: "Meal plan filtering feature is coming soon!",
+    });
+  };
+
+  const handleCustomize = (planName: string) => {
+    toast({
+      title: "Customizing Plan",
+      description: `You're now customizing the ${planName} meal plan.`,
+    });
+  };
+
+  const handleActivatePlan = (planId: string, planName: string) => {
+    setActivePlan(planId);
+    toast({
+      title: "Plan Activated",
+      description: `${planName} has been activated as your current meal plan.`,
+    });
   };
 
   return (
@@ -88,12 +124,12 @@ const MealPlans = () => {
           
           <div className="flex justify-between items-center mb-6">
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleFilter}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </Button>
             </div>
-            <Button size="sm">
+            <Button size="sm" onClick={handleCreateCustomPlan}>
               <Plus className="h-4 w-4 mr-2" />
               Create Custom Plan
             </Button>
@@ -112,9 +148,9 @@ const MealPlans = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleSelectPlan(plan.id)}
+                        onClick={() => handleViewDetails(plan.id)}
                       >
-                        {activePlan === plan.id ? "Hide Details" : "View Details"}
+                        {expandedPlan === plan.id ? "Hide Details" : "View Details"}
                       </Button>
                     </div>
                   </div>
@@ -140,7 +176,7 @@ const MealPlans = () => {
                     </div>
                   </div>
                   
-                  {activePlan === plan.id && (
+                  {expandedPlan === plan.id && (
                     <div className="mt-4 border rounded-md">
                       <Table>
                         <TableHeader>
@@ -170,12 +206,20 @@ const MealPlans = () => {
                 </CardContent>
                 
                 <CardFooter className="flex justify-end gap-2 bg-muted/10 pt-4">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCustomize(plan.name)}
+                  >
                     <Apple className="h-4 w-4 mr-2" />
                     Customize
                   </Button>
-                  <Button size="sm">
-                    Activate Plan
+                  <Button 
+                    size="sm"
+                    onClick={() => handleActivatePlan(plan.id, plan.name)}
+                    variant={activePlan === plan.id ? "secondary" : "default"}
+                  >
+                    {activePlan === plan.id ? "Plan Active" : "Activate Plan"}
                   </Button>
                 </CardFooter>
               </Card>
