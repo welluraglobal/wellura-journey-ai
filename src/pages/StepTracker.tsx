@@ -42,10 +42,10 @@ const StepTracker = () => {
         setAverageSteps(Math.floor(total / history.length));
       }
     } catch (error) {
-      console.error("Erro ao carregar dados de saúde:", error);
+      console.error("Error loading health data:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar seus dados de saúde.",
+        title: "Error",
+        description: "Failed to load your health data.",
         variant: "destructive"
       });
     }
@@ -73,21 +73,21 @@ const StepTracker = () => {
       if (success) {
         setIsTracking(true);
         toast({
-          title: "Rastreamento iniciado",
-          description: "Começamos a monitorar seus passos.",
+          title: "Tracking Started",
+          description: "We've started monitoring your steps.",
         });
       } else {
         toast({
-          title: "Erro",
-          description: "Não foi possível iniciar o rastreamento.",
+          title: "Error",
+          description: "Could not start tracking.",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Erro ao iniciar rastreamento:", error);
+      console.error("Error starting tracking:", error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao iniciar o rastreamento.",
+        title: "Error",
+        description: "An error occurred while starting tracking.",
         variant: "destructive"
       });
     }
@@ -98,8 +98,8 @@ const StepTracker = () => {
     setIsTracking(false);
     
     toast({
-      title: "Rastreamento parado",
-      description: "Paramos de monitorar seus passos.",
+      title: "Tracking Stopped",
+      description: "We've stopped monitoring your steps.",
     });
     
     loadHealthData();
@@ -107,7 +107,7 @@ const StepTracker = () => {
   
   const chartData = historicalData.map(day => {
     const date = new Date(day.date);
-    const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
     
     return {
       day: dayName,
@@ -132,7 +132,7 @@ const StepTracker = () => {
       
       <main className="flex-1 p-6 md:p-10">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Contador de Passos</h1>
+          <h1 className="text-3xl font-bold mb-6">Step Counter</h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <StepCounter 
@@ -150,7 +150,7 @@ const StepTracker = () => {
           
           <Card className="w-full mb-8">
             <CardHeader>
-              <CardTitle>Seus passos esta semana</CardTitle>
+              <CardTitle>Your steps this week</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80 w-full">
@@ -169,7 +169,7 @@ const StepTracker = () => {
                       yAxisId="left"
                       type="monotone" 
                       dataKey="steps" 
-                      name="Passos" 
+                      name="Steps" 
                       stroke="#8b5cf6" 
                       activeDot={{ r: 8 }} 
                     />
@@ -177,7 +177,7 @@ const StepTracker = () => {
                       yAxisId="right"
                       type="monotone" 
                       dataKey="calories" 
-                      name="Calorias" 
+                      name="Calories" 
                       stroke="#f97316" 
                     />
                   </LineChart>
@@ -188,37 +188,37 @@ const StepTracker = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Atividades</CardTitle>
+              <CardTitle>Activity History</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4">Dia</th>
-                      <th className="text-left py-3 px-4">Passos</th>
-                      <th className="text-left py-3 px-4">Calorias</th>
-                      <th className="text-left py-3 px-4">Meta Atingida</th>
+                      <th className="text-left py-3 px-4">Day</th>
+                      <th className="text-left py-3 px-4">Steps</th>
+                      <th className="text-left py-3 px-4">Calories</th>
+                      <th className="text-left py-3 px-4">Goal Reached</th>
                     </tr>
                   </thead>
                   <tbody>
                     {historicalData.map((day, index) => {
                       const date = new Date(day.date);
-                      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+                      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
                       const formattedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
                       
                       return (
                         <tr key={index} className="border-b">
                           <td className="py-3 px-4">{formattedDay}</td>
-                          <td className="py-3 px-4">{day.steps.toLocaleString('pt-BR')}</td>
+                          <td className="py-3 px-4">{day.steps.toLocaleString('en-US')}</td>
                           <td className="py-3 px-4">{day.calories}</td>
                           <td className="py-3 px-4">
                             {day.steps >= 8000 ? (
                               <span className="inline-flex items-center text-green-600">
-                                <Trophy className="h-4 w-4 mr-1" /> Sim
+                                <Trophy className="h-4 w-4 mr-1" /> Yes
                               </span>
                             ) : (
-                              <span className="text-red-500">Não</span>
+                              <span className="text-red-500">No</span>
                             )}
                           </td>
                         </tr>
@@ -237,7 +237,7 @@ const StepTracker = () => {
               variant="default"
             >
               <MessageCircle className="mr-2 h-4 w-4" />
-              Compartilhar Dados com Consultor de IA
+              Share Data with AI Consultant
             </Button>
           </div>
         </div>

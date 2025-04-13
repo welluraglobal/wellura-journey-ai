@@ -30,13 +30,13 @@ const StepCounter = ({ steps, isTracking, onStartTracking, onStopTracking }: Ste
         
         if (!permission) {
           toast({
-            title: "Permissão Negada",
-            description: "Precisamos de permissão para contar seus passos.",
+            title: "Permission Denied",
+            description: "We need permission to count your steps.",
             variant: "destructive"
           });
         }
       } catch (error) {
-        console.error("Erro ao verificar permissões:", error);
+        console.error("Error checking permissions:", error);
         setHasPermission(false);
       }
     };
@@ -48,15 +48,15 @@ const StepCounter = ({ steps, isTracking, onStartTracking, onStopTracking }: Ste
     if (isTracking) {
       onStopTracking();
     } else {
-      // Verificar permissões novamente se necessário
+      // Check permissions again if needed
       if (hasPermission === false) {
         const permission = await healthService.requestPermissions();
         setHasPermission(permission);
         
         if (!permission) {
           toast({
-            title: "Permissão Negada",
-            description: "Precisamos de permissão para contar seus passos.",
+            title: "Permission Denied",
+            description: "We need permission to count your steps.",
             variant: "destructive"
           });
           return;
@@ -72,16 +72,16 @@ const StepCounter = ({ steps, isTracking, onStartTracking, onStopTracking }: Ste
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Footprints className="text-primary h-6 w-6" />
-          Passos de Hoje
+          Today's Steps
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center">
         <div className="text-6xl font-bold mb-4 text-center">
-          {steps.toLocaleString('pt-BR')}
+          {steps.toLocaleString('en-US')}
         </div>
         <Progress value={progressPercentage} className="w-full h-3 mb-2" />
         <p className="text-muted-foreground text-sm mb-4">
-          {steps.toLocaleString('pt-BR')} de {targetSteps.toLocaleString('pt-BR')} passos 
+          {steps.toLocaleString('en-US')} of {targetSteps.toLocaleString('en-US')} steps 
           ({Math.round(progressPercentage)}%)
         </p>
       </CardContent>
@@ -92,7 +92,7 @@ const StepCounter = ({ steps, isTracking, onStartTracking, onStopTracking }: Ste
           className="w-full"
           variant={isTracking ? "destructive" : "default"}
         >
-          {isTracking ? "Parar Rastreamento" : "Iniciar Rastreamento"}
+          {isTracking ? "Stop Tracking" : "Start Tracking"}
         </Button>
       </CardFooter>
     </Card>

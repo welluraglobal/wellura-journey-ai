@@ -14,44 +14,44 @@ const StepMetrics = ({ healthData, averageSteps }: StepMetricsProps) => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Métricas da Semana</CardTitle>
+        <CardTitle>Weekly Metrics</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center text-sm text-muted-foreground">
               <Footprints className="h-4 w-4 mr-1" />
-              Total de Passos
+              Total Steps
             </div>
             <div className="text-2xl font-semibold">
-              {steps.toLocaleString('pt-BR')}
+              {steps.toLocaleString('en-US')}
             </div>
           </div>
           
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center text-sm text-muted-foreground">
               <Flame className="h-4 w-4 mr-1" />
-              Calorias Queimadas
+              Calories Burned
             </div>
             <div className="text-2xl font-semibold">
-              {calories.toLocaleString('pt-BR')}
+              {calories.toLocaleString('en-US')}
             </div>
           </div>
           
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center text-sm text-muted-foreground">
               <ArrowUpRight className="h-4 w-4 mr-1" />
-              Média Diária
+              Daily Average
             </div>
             <div className="text-2xl font-semibold">
-              {averageSteps.toLocaleString('pt-BR')}
+              {averageSteps.toLocaleString('en-US')}
             </div>
           </div>
           
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center text-sm text-muted-foreground">
               <Navigation className="h-4 w-4 mr-1" />
-              Distância
+              Distance
             </div>
             <div className="text-2xl font-semibold">
               {distance.toFixed(2)} km
@@ -61,7 +61,7 @@ const StepMetrics = ({ healthData, averageSteps }: StepMetricsProps) => {
           <div className="flex flex-col space-y-1.5 col-span-2">
             <div className="flex items-center text-sm text-muted-foreground">
               <Timer className="h-4 w-4 mr-1" />
-              Tempo Ativo
+              Active Time
             </div>
             <div className="text-2xl font-semibold">
               {activeMinutes} min
