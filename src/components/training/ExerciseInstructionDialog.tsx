@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Dumbbell, Timer, RotateCcw, User, Heart, Activity, CheckCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Dumbbell, Timer, RotateCcw, User, Heart, Activity, CheckCircle, ThumbsUp, ThumbsDown, Package } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -19,6 +19,7 @@ const exerciseDetails = {
     primaryMuscles: "Chest, Shoulders, Triceps",
     secondaryMuscles: "Core, Lower back",
     equipment: "None (bodyweight)",
+    equipmentImages: [],
     difficulty: "Beginner to Advanced",
     sets: "3-4",
     reps: "8-15",
@@ -52,11 +53,134 @@ const exerciseDetails = {
       "Highly versatile with many variations"
     ]
   },
+  "Dumbbell Rows": {
+    primaryMuscles: "Upper back, Lats, Rhomboids",
+    secondaryMuscles: "Biceps, Rear deltoids, Core",
+    equipment: "Dumbbell, Bench (optional)",
+    equipmentImages: [
+      "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1540558105001-5811776FBFA6?w=500&auto=format&fit=crop"
+    ],
+    difficulty: "Beginner to Intermediate",
+    sets: "3-4",
+    reps: "8-12",
+    restTime: "60-90 seconds",
+    tips: [
+      "Keep your back flat and core engaged",
+      "Pull dumbbell up to your hip/lower ribcage",
+      "Keep elbow close to your body during the movement",
+      "Lower the weight in a controlled manner",
+      "Maintain a slight bend in the supporting knee"
+    ],
+    variations: [
+      "Two-arm bent over rows",
+      "Single-arm bench supported rows",
+      "Meadows row",
+      "Kroc rows (heavier weight)",
+      "Incline bench rows"
+    ],
+    commonMistakes: [
+      "Twisting the torso during the movement",
+      "Using momentum/swinging the weight",
+      "Lifting the weight too far up or not high enough",
+      "Rounding the back",
+      "Excessive neck strain from looking up"
+    ],
+    benefits: [
+      "Builds upper back strength",
+      "Improves posture",
+      "Targets multiple muscle groups",
+      "Unilateral training helps balance development",
+      "Minimal equipment required"
+    ]
+  },
+  "Bicep Curls": {
+    primaryMuscles: "Biceps brachii",
+    secondaryMuscles: "Brachialis, Brachioradialis, Forearms",
+    equipment: "Dumbbells or Barbell",
+    equipmentImages: [
+      "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=500&auto=format&fit=crop"
+    ],
+    difficulty: "Beginner",
+    sets: "3-4",
+    reps: "8-15",
+    restTime: "60 seconds",
+    tips: [
+      "Keep elbows close to sides throughout the movement",
+      "Avoid swinging or using momentum",
+      "Fully extend arms at the bottom position",
+      "Contract biceps at the top of the movement",
+      "Use controlled movements both up and down"
+    ],
+    variations: [
+      "Hammer curls",
+      "Incline bench curls",
+      "Concentration curls",
+      "Preacher curls",
+      "Cable curls"
+    ],
+    commonMistakes: [
+      "Using too much weight and improper form",
+      "Moving the elbows forward or back",
+      "Not fully extending arms at the bottom",
+      "Using momentum/swinging the weights",
+      "Curling too quickly"
+    ],
+    benefits: [
+      "Strengthens biceps muscles",
+      "Improves arm definition",
+      "Enhances grip strength",
+      "Versatile with many variations",
+      "Simple to learn for beginners"
+    ]
+  },
+  "Squats": {
+    primaryMuscles: "Quadriceps, Glutes, Hamstrings",
+    secondaryMuscles: "Core, Lower back, Calves",
+    equipment: "None (bodyweight), Barbell, or Dumbbells optional",
+    equipmentImages: [
+      "https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=500&auto=format&fit=crop"
+    ],
+    difficulty: "Beginner to Advanced",
+    sets: "3-5",
+    reps: "8-15",
+    restTime: "60-120 seconds",
+    tips: [
+      "Keep feet shoulder-width apart or slightly wider",
+      "Keep chest up and back straight",
+      "Push knees outward (in line with toes)",
+      "Lower until thighs are parallel to ground (or lower if mobility allows)",
+      "Drive through heels to stand back up"
+    ],
+    variations: [
+      "Front squats",
+      "Goblet squats",
+      "Bulgarian split squats",
+      "Overhead squats",
+      "Jump squats"
+    ],
+    commonMistakes: [
+      "Knees caving inward",
+      "Heels lifting off the ground",
+      "Rounding the back",
+      "Not reaching proper depth",
+      "Looking down (instead of straight ahead or slightly up)"
+    ],
+    benefits: [
+      "Builds lower body strength",
+      "Increases mobility and flexibility",
+      "Strengthens core and stabilizer muscles",
+      "Improves athletic performance",
+      "Burns calories efficiently"
+    ]
+  },
   // Default values for other exercises
   default: {
     primaryMuscles: "Various major muscle groups",
     secondaryMuscles: "Supporting muscles",
     equipment: "Varies",
+    equipmentImages: [],
     difficulty: "Beginner to Advanced",
     sets: "3-4",
     reps: "8-12",
@@ -90,6 +214,49 @@ const exerciseDetails = {
       "Aids in preventing injuries when done properly"
     ]
   }
+};
+
+// Adding more equipment data for additional exercises
+exerciseDetails["Shoulder Press"] = {
+  ...exerciseDetails.default,
+  primaryMuscles: "Deltoids (shoulders)",
+  secondaryMuscles: "Triceps, Upper chest, Trapezius",
+  equipment: "Dumbbells or Barbell",
+  equipmentImages: [
+    "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=500&auto=format&fit=crop"
+  ]
+};
+
+exerciseDetails["Tricep Extensions"] = {
+  ...exerciseDetails.default,
+  primaryMuscles: "Triceps",
+  secondaryMuscles: "Shoulders (minor involvement)",
+  equipment: "Dumbbells, Cables, or Resistance bands",
+  equipmentImages: [
+    "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=500&auto=format&fit=crop"
+  ]
+};
+
+exerciseDetails["Lunges"] = {
+  ...exerciseDetails.default,
+  primaryMuscles: "Quadriceps, Glutes, Hamstrings",
+  secondaryMuscles: "Calves, Core stabilizers",
+  equipment: "None (bodyweight) or Dumbbells optional",
+  equipmentImages: [
+    "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500&auto=format&fit=crop"
+  ]
+};
+
+exerciseDetails["Plank"] = {
+  ...exerciseDetails.default,
+  primaryMuscles: "Core (rectus abdominis, transverse abdominis)",
+  secondaryMuscles: "Shoulders, Chest, Lower back, Glutes",
+  equipment: "None (bodyweight) or Mat for comfort",
+  equipmentImages: [
+    "https://images.unsplash.com/photo-1563705883268-eb58ab6f505d?w=500&auto=format&fit=crop"
+  ]
 };
 
 const ExerciseInstructionDialog: React.FC<ExerciseInstructionDialogProps> = ({
@@ -186,7 +353,30 @@ const ExerciseInstructionDialog: React.FC<ExerciseInstructionDialogProps> = ({
               <AccordionItem value="equipment">
                 <AccordionTrigger>Equipment Needed</AccordionTrigger>
                 <AccordionContent>
-                  <p className="text-sm">{details.equipment}</p>
+                  <p className="text-sm mb-3">{details.equipment}</p>
+                  
+                  {details.equipmentImages && details.equipmentImages.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      {details.equipmentImages.map((img, index) => (
+                        <div key={index} className="rounded-md overflow-hidden bg-muted">
+                          <img 
+                            src={img} 
+                            alt={`Equipment ${index + 1}`} 
+                            className="w-full h-32 object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-6 border rounded-md">
+                      <Package className="h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground ml-2">
+                        {details.equipment === "None (bodyweight)" 
+                          ? "No equipment needed for this exercise" 
+                          : "Equipment images not available"}
+                      </p>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
               
