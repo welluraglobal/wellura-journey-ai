@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Volume2, Volume1, CheckCircle2 } from "lucide-react";
@@ -64,7 +63,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   useEffect(() => {
     if (repCount >= targetReps) {
       // Workout completed
-      playFeedback("Workout completed! You crushed it!");
+      playFeedback(getCompletionPhrase());
       setIsActive(false);
       
       // Delay to allow final feedback to be heard
@@ -265,29 +264,108 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     }
   };
   
+  const getMotivationalPhrase = (currentRep: number, targetReps: number): string => {
+    const remainingReps = targetReps - currentRep;
+    
+    if (language === "pt-br") {
+      // Portuguese motivational phrases
+      if (remainingReps > 5) {
+        const startPhrases = [
+          "Vamos lá!",
+          "Boa, continue assim!",
+          "Isso mesmo, mantém o ritmo!",
+          "Você está mandando bem!",
+        ];
+        return startPhrases[Math.floor(Math.random() * startPhrases.length)];
+      } else if (remainingReps > 0) {
+        const midPhrases = [
+          `Só mais ${remainingReps}, bora!`,
+          `Falta ${remainingReps}, você consegue!`,
+          `Mais ${remainingReps} e terminou!`,
+          "Está quase lá, não desista!",
+        ];
+        return midPhrases[Math.floor(Math.random() * midPhrases.length)];
+      } else {
+        return "Última repetição, capricha!";
+      }
+    } else {
+      // English motivational phrases
+      if (remainingReps > 5) {
+        const startPhrases = [
+          "Let's go!",
+          "Great job, keep it up!",
+          "That's it, keep the pace!",
+          "You're doing amazing!",
+        ];
+        return startPhrases[Math.floor(Math.random() * startPhrases.length)];
+      } else if (remainingReps > 0) {
+        const midPhrases = [
+          `Only ${remainingReps} more to go!`,
+          `${remainingReps} left, you can do it!`,
+          `Just ${remainingReps} more and you're done!`,
+          "You're almost there, don't give up!",
+        ];
+        return midPhrases[Math.floor(Math.random() * midPhrases.length)];
+      } else {
+        return "Last rep, give it all you've got!";
+      }
+    }
+  };
+  
+  const getTechnicalPhrase = (): string => {
+    if (language === "pt-br") {
+      const phrases = [
+        "Mantenha as costas retas",
+        "Desça mais profundo",
+        "Joelhos alinhados com os pés",
+        "Mantenha o peito para cima",
+        "Capricha na postura!",
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    } else {
+      const phrases = [
+        "Keep your back straight",
+        "Go deeper with your squat",
+        "Knees in line with your feet",
+        "Keep your chest up",
+        "Watch your form!",
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    }
+  };
+  
+  const getCompletionPhrase = (): string => {
+    if (language === "pt-br") {
+      const phrases = [
+        "Treino concluído! Você é brabo!",
+        "Incrível! Você completou o treino!",
+        "Parabéns! Você arrasou hoje!",
+        "Excelente trabalho! Treino finalizado!",
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    } else {
+      const phrases = [
+        "Workout completed! You crushed it!",
+        "Amazing! You've completed the workout!",
+        "Congrats! You rocked it today!",
+        "Excellent work! Workout finished!",
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    }
+  };
+  
   const provideFeedback = (currentRep: number, targetReps: number) => {
     const now = Date.now();
     // Limit feedback frequency to avoid overwhelming the user
     if (now - lastFeedbackTime < 3000) return; 
     
     let feedback = "";
-    const remainingReps = targetReps - currentRep;
     
     if (feedbackMode === "motivational") {
-      if (remainingReps > 0) {
-        const phrases = [
-          `Let's go! Only ${remainingReps} more!`,
-          `You're doing great! ${remainingReps} to go!`,
-          `Keep pushing! ${remainingReps} left!`,
-          `You've got this! Just ${remainingReps} more!`
-        ];
-        feedback = phrases[Math.floor(Math.random() * phrases.length)];
-      } else {
-        feedback = "Final rep! You crushed it!";
-      }
+      feedback = getMotivationalPhrase(currentRep, targetReps);
     } else {
       // Technical mode - form feedback
-      feedback = "Keep your back straight and knees aligned";
+      feedback = getTechnicalPhrase();
     }
     
     playFeedback(feedback);
@@ -295,13 +373,35 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const playFeedback = (text: string) => {
-    // Text-to-speech with appropriate language settings
+    // Text-to-speech with improved voice selection and parameters
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === "en" ? "en-US" : "pt-BR";
-      utterance.volume = 1;
-      utterance.rate = 1;
-      utterance.pitch = 1;
+      
+      // Get all available voices
+      const voices = window.speechSynthesis.getVoices();
+      
+      // Select appropriate voice based on language
+      if (language === "pt-br") {
+        // Try to find Luciana or any Portuguese voice
+        utterance.voice = voices.find(voice => 
+          voice.name.includes('Luciana') || 
+          voice.lang === 'pt-BR'
+        ) || null;
+        utterance.lang = "pt-BR";
+      } else {
+        // Find a good English voice
+        utterance.voice = voices.find(voice => 
+          voice.name.includes('Samantha') || 
+          voice.lang === 'en-US'
+        ) || null;
+        utterance.lang = "en-US";
+      }
+      
+      // Set energetic speech parameters
+      utterance.rate = 1.1;  // Slightly faster than normal
+      utterance.pitch = 1.2; // Higher pitch for more energy
+      utterance.volume = 1;  // Maximum volume
+      
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -323,6 +423,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const startWorkout = () => {
+    // Initialize voice list if needed
+    if (window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+    
     setIsActive(true);
     setRepCount(0);
   };

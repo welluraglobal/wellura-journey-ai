@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,14 @@ const WellyVisionDialog: React.FC<WellyVisionDialogProps> = ({
   onOpenChange,
   onComplete
 }) => {
+  // Pre-load speech synthesis voices when dialog opens
+  useEffect(() => {
+    if (open && window.speechSynthesis) {
+      // This triggers voice loading in some browsers
+      window.speechSynthesis.getVoices();
+    }
+  }, [open]);
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-screen-md w-[95vw] h-[90vh] p-0 bg-black text-white">
