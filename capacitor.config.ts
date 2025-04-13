@@ -11,7 +11,18 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   plugins: {
-    // Configurações para plugins nativos
+    SplashScreen: {
+      launchAutoHide: true,
+      showSpinner: false
+    },
+    StatusBar: {
+      style: 'light',
+      backgroundColor: '#5B46A2'
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true
+    }
   }
 };
 
