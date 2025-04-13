@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import FitnessQuiz from "@/components/training/FitnessQuiz";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import ExerciseInstructionDialog from "@/components/training/ExerciseInstructionDialog";
 
 const exerciseImages = {
   "Push-ups": "https://images.unsplash.com/photo-1616803689943-5601631c7fec?w=500&auto=format&fit=crop",
@@ -144,6 +145,8 @@ const Training = () => {
   const [recommendedPlan, setRecommendedPlan] = useState<string | null>(null);
   const [activePlan, setActivePlan] = useState<string | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Record<string, string[]>>({});
+  const [selectedExercise, setSelectedExercise] = useState<{name: string, image: string, description: string} | null>(null);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -251,6 +254,15 @@ const Training = () => {
     const completedCount = completedExercises[activePlan]?.length || 0;
     
     return Math.round((completedCount / totalExercises) * 100);
+  };
+
+  const handleViewInstructions = (exercise: string) => {
+    setSelectedExercise({
+      name: exercise,
+      image: exerciseImages[exercise] || "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=500&auto=format&fit=crop",
+      description: exerciseDescriptions[exercise] || "Perform this exercise with proper form, focusing on controlled movements and proper breathing technique."
+    });
+    setInstructionsOpen(true);
   };
 
   const activePlanObj = activePlan 
@@ -531,6 +543,7 @@ const Training = () => {
                                             variant="ghost" 
                                             size="sm"
                                             className="text-xs"
+                                            onClick={() => handleViewInstructions(exercise)}
                                           >
                                             <Info className="h-3 w-3 mr-1" />
                                             View Detailed Instructions
@@ -589,7 +602,12 @@ const Training = () => {
                             </p>
                           </CardContent>
                           <CardFooter className="pt-0">
-                            <Button variant="outline" size="sm" className="w-full">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => handleViewInstructions(exercise)}
+                            >
                               View Details
                             </Button>
                           </CardFooter>
@@ -614,6 +632,15 @@ const Training = () => {
                                   </div>
                                   <CardContent className="p-4">
                                     <h3 className="font-medium">{exercise}</h3>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="mt-2 w-full"
+                                      onClick={() => handleViewInstructions(exercise)}
+                                    >
+                                      <Info className="h-3 w-3 mr-1" />
+                                      View Instructions
+                                    </Button>
                                   </CardContent>
                                 </Card>
                               </div>
@@ -628,6 +655,16 @@ const Training = () => {
                 </Card>
               </TabsContent>
             </Tabs>
+          )}
+          
+          {selectedExercise && (
+            <ExerciseInstructionDialog
+              exercise={selectedExercise.name}
+              open={instructionsOpen}
+              onOpenChange={setInstructionsOpen}
+              imageUrl={selectedExercise.image}
+              description={selectedExercise.description}
+            />
           )}
         </div>
       </main>
