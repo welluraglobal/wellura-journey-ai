@@ -49,14 +49,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     if (isActive && videoRef.current) {
       initCamera();
       
-      // Play welcome message if not played yet
-      if (!hasPlayedIntro) {
-        setTimeout(() => {
-          playWelcomeMessage();
-          setHasPlayedIntro(true);
-        }, 1000); // Slight delay to ensure camera is initialized
-      }
-      
       return () => {
         stopPoseDetection();
       };
@@ -72,7 +64,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         tracks.forEach(track => track.stop());
       }
     };
-  }, [isActive, hasPlayedIntro]);
+  }, [isActive]);
   
   // Check for workout completion
   useEffect(() => {
@@ -93,13 +85,13 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   }, [repCount, targetReps, exerciseName, onComplete]);
   
   const playWelcomeMessage = () => {
-    const userName = firstName || "there";
+    const userName = firstName || "amigo";
     let welcomeText = "";
     
     if (language === "pt-br") {
-      welcomeText = `Bem-vindo, ${userName}. Este exercício se chama ${exerciseName}, e eu vou te ajudar a executar da forma correta para alcançar seus resultados. Vamos começar!`;
+      welcomeText = `Bem-vindo, ${userName}. Vamos começar seu treino! O primeiro exercício de hoje é: ${exerciseName}. Eu vou te ajudar a executar com perfeição para que você tenha resultados reais. Vamos nessa!`;
     } else {
-      welcomeText = `Welcome, ${userName}. This exercise is called ${exerciseName}, and I'll guide you to perform it correctly so you can get real results. Let's begin!`;
+      welcomeText = `Welcome, ${userName}. Let's start your workout! Your first exercise today is: ${exerciseName}. I'll help you perform it perfectly so you can get real results. Let's do this!`;
     }
     
     playFeedback(welcomeText);
@@ -122,6 +114,14 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           title: "Camera Active",
           description: "Welly is now watching your form!",
         });
+        
+        // Play welcome message as soon as camera is initialized
+        if (!hasPlayedIntro) {
+          setTimeout(() => {
+            playWelcomeMessage();
+            setHasPlayedIntro(true);
+          }, 500); // Small delay to ensure camera is fully initialized
+        }
         
         // Start pose detection after the video is loaded
         videoRef.current.onloadeddata = () => {
@@ -944,8 +944,8 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       }
       
       // Set energetic speech parameters
-      utterance.rate = 1.1;  // Slightly faster than normal
-      utterance.pitch = 1.2; // Higher pitch for more energy
+      utterance.rate = 1.05;  // Slightly faster than normal
+      utterance.pitch = 1.1; // Higher pitch for more energy
       utterance.volume = 1;  // Maximum volume
       
       window.speechSynthesis.speak(utterance);
