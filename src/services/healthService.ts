@@ -1,4 +1,3 @@
-
 // Interface para dados de saúde
 export interface HealthData {
   steps: number;
@@ -186,6 +185,48 @@ export class HealthService {
   // Verifica se o rastreamento está ativo
   isTracking(): boolean {
     return this.trackingInterval !== null;
+  }
+
+  // Novo método para formatar dados de saúde para o consultor de IA
+  formatHealthDataForChat(): string {
+    const currentData = this.getMockHealthData();
+    const historicalData = this.mockHistoricalData;
+
+    const chatMessage = `
+Dados de Atividade Física da Última Semana:
+
+📊 Resumo Semanal:
+- Passos Totais: ${currentData.steps.toLocaleString('pt-BR')}
+- Calorias Queimadas: ${currentData.calories.toLocaleString('pt-BR')}
+- Distância Percorrida: ${currentData.distance.toFixed(2)} km
+- Tempo Ativo: ${currentData.activeMinutes} minutos
+
+📅 Histórico Diário de Passos:
+${historicalData.map((day, index) => `
+${index === historicalData.length - 1 ? '📍 Hoje' : `Dia ${index + 1}`}: 
+  - Passos: ${day.steps.toLocaleString('pt-BR')}
+  - Calorias: ${day.calories.toLocaleString('pt-BR')}
+`).join('\n')}
+
+💡 Avaliação Rápida:
+${this.generateHealthInsights(currentData, historicalData)}
+`;
+
+    return chatMessage;
+  }
+
+  // Método para gerar insights básicos de saúde
+  private generateHealthInsights(currentData: HealthData, historicalData: HistoricalHealthData[]): string {
+    const averageSteps = historicalData.reduce((sum, day) => sum + day.steps, 0) / historicalData.length;
+    const goalSteps = 10000;
+
+    if (currentData.steps < goalSteps * 0.5) {
+      return "Você está com um nível de atividade baixo. Tente aumentar seus passos diários, começando com caminhadas curtas.";
+    } else if (currentData.steps < goalSteps) {
+      return "Você está no caminho certo! Continue aumentando gradualmente sua atividade física.";
+    } else {
+      return "Excelente trabalho! Você está atingindo metas de atividade física recomendadas.";
+    }
   }
 }
 

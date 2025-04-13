@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import NavBar from "@/components/NavBar";
@@ -17,17 +16,17 @@ import { Footprints, Flame, Trophy } from "lucide-react";
 import StepCounter from "@/components/steps/StepCounter";
 import StepMetrics from "@/components/steps/StepMetrics";
 import { healthService, HealthData, HistoricalHealthData } from "@/services/healthService";
+import { Button, MessageCircle } from "lucide-react";
+import { navigate } from "react-router-dom";
 
 const StepTracker = () => {
   const { toast } = useToast();
   
-  // Estados para armazenar os dados de saúde
   const [healthData, setHealthData] = useState<HealthData>({ steps: 0, calories: 0, distance: 0, activeMinutes: 0 });
   const [historicalData, setHistoricalData] = useState<HistoricalHealthData[]>([]);
   const [isTracking, setIsTracking] = useState(false);
   const [averageSteps, setAverageSteps] = useState(0);
   
-  // Função para carregar dados de saúde
   const loadHealthData = async () => {
     try {
       const data = await healthService.getHealthData();
@@ -36,7 +35,6 @@ const StepTracker = () => {
       const history = await healthService.getHistoricalData();
       setHistoricalData(history);
       
-      // Calcula a média de passos
       if (history.length > 0) {
         const total = history.reduce((sum, day) => sum + day.steps, 0);
         setAverageSteps(Math.floor(total / history.length));
@@ -51,26 +49,21 @@ const StepTracker = () => {
     }
   };
   
-  // Carrega dados ao iniciar
   useEffect(() => {
     loadHealthData();
     
-    // Verifica se já estava rastreando
     const alreadyTracking = healthService.isTracking();
     setIsTracking(alreadyTracking);
     
-    // Intervalo para atualizar dados periódicamente
     const interval = setInterval(() => {
       loadHealthData();
     }, 5000);
     
     return () => {
       clearInterval(interval);
-      // Não para o rastreamento ao desmontar para continuar em segundo plano
     };
   }, [toast]);
   
-  // Inicia o rastreamento de passos
   const handleStartTracking = async () => {
     try {
       const success = await healthService.startTracking();
@@ -98,7 +91,6 @@ const StepTracker = () => {
     }
   };
   
-  // Para o rastreamento de passos
   const handleStopTracking = () => {
     healthService.stopTracking();
     setIsTracking(false);
@@ -108,11 +100,9 @@ const StepTracker = () => {
       description: "Paramos de monitorar seus passos.",
     });
     
-    // Atualiza os dados uma última vez
     loadHealthData();
   };
   
-  // Prepara dados para o gráfico
   const chartData = historicalData.map(day => {
     const date = new Date(day.date);
     const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
@@ -123,6 +113,16 @@ const StepTracker = () => {
       calories: day.calories
     };
   });
+  
+  const shareWithAIConsultant = () => {
+    const formattedHealthData = healthService.formatHealthDataForChat();
+    
+    navigate('/chat', { 
+      state: { 
+        prefilledMessage: formattedHealthData 
+      } 
+    });
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -227,6 +227,16 @@ const StepTracker = () => {
               </div>
             </CardContent>
           </Card>
+          
+          <div className="mt-4">
+            <Button 
+              onClick={shareWithAIConsultant}
+              className="w-full"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Compartilhar Dados com Consultor de IA
+            </Button>
+          </div>
         </div>
       </main>
     </div>
