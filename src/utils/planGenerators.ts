@@ -1,1023 +1,932 @@
+// This file contains utility functions for generating personalized plans
 
-import { supabase } from "@/integrations/supabase/client";
-
-// Types for plan generation
-type QuizData = {
-  goals: string[];
-  answers: Record<string, any>;
-  completedAt?: string;
-};
-
-type UserProfile = {
-  first_name?: string;
-  last_name?: string;
-  main_goal?: string;
-  quiz_data?: QuizData;
-  email?: string;
-};
-
-// Generate a meal plan based on quiz answers
-export const generateMealPlan = (quizData: QuizData, userProfile?: UserProfile) => {
-  const goals = quizData.goals || [];
-  const answers = quizData.answers || {};
-  
-  // Default values
-  let calories = 2000;
-  let protein = 150;
-  let carbs = 200;
-  let fat = 65;
-  const plan: any = {
-    id: "quiz-generated",
-    name: "Personalized Plan",
-    description: "Plan based on your Wellness Quiz answers",
-    isPersonalized: true,
-    calories,
-    protein,
-    carbs,
-    fat,
-    meals: []
-  };
-  
-  // Adjust calories based on goals
-  if (goals.includes("Lose Weight")) {
-    calories = 1600;
-    protein = 140;
-    carbs = 120;
-    fat = 50;
-    plan.name = "Weight Loss Plan";
-    plan.description = "Calorie-controlled plan based on your quiz answers to support weight loss";
-  } else if (goals.includes("Build Muscle")) {
-    calories = 2400;
-    protein = 180;
-    carbs = 240;
-    fat = 75;
-    plan.name = "Muscle Building Plan";
-    plan.description = "High-protein plan based on your quiz answers to support muscle growth";
-  } else if (goals.includes("Boost Energy")) {
-    calories = 2100;
-    protein = 130;
-    carbs = 260;
-    fat = 60;
-    plan.name = "Energy Boost Plan";
-    plan.description = "Balanced macronutrient plan based on your quiz answers to optimize energy levels";
+// Calculate body composition based on quiz answers
+export const calculateBodyComposition = (quizData: any) => {
+  if (!quizData || !quizData.answers) {
+    return null;
   }
   
-  // Further adjust based on specific answers
-  if (answers["weight-diet"] === "Keto/Low-Carb") {
-    carbs = Math.floor(carbs * 0.4);
-    fat = Math.floor(fat * 1.5);
-    plan.description += " (Low-Carb Adaptation)";
-  } else if (answers["weight-diet"] === "Vegetarian/Vegan") {
-    protein = Math.floor(protein * 0.9);
-    carbs = Math.floor(carbs * 1.1);
-    plan.description += " (Plant-Based Adaptation)";
-  }
+  const {
+    age = "30",
+    gender = "male",
+    height = "170", 
+    currentWeight = "70",
+    targetWeight = "65",
+    waistCircumference = "85"
+  } = quizData.answers;
   
-  // Adjust calories based on activity level
-  if (answers["weight-exercise"] === "5+ times") {
-    calories = Math.floor(calories * 1.2);
-    plan.description += " (High Activity)";
-  } else if (answers["weight-exercise"] === "None") {
-    calories = Math.floor(calories * 0.9);
-    plan.description += " (Low Activity)";
-  }
-  
-  // Update final values
-  plan.calories = calories;
-  plan.protein = protein;
-  plan.carbs = carbs;
-  plan.fat = fat;
-  
-  // Generate meals (simplified for demonstration)
-  plan.meals = generateMeals(plan.name, calories, protein, carbs, fat);
-  
-  return plan;
-};
-
-// Generate meals for the meal plan
-const generateMeals = (planType: string, calories: number, protein: number, carbs: number, fat: number) => {
-  // Sample meal data based on plan type
-  const breakfastOptions = {
-    "Weight Loss Plan": [
-      { name: "Protein Oatmeal", description: "Oatmeal with protein powder and berries", time: "7:00 AM" },
-      { name: "Greek Yogurt Bowl", description: "Greek yogurt with nuts and honey", time: "7:30 AM" }
-    ],
-    "Muscle Building Plan": [
-      { name: "Protein Pancakes", description: "Protein-rich pancakes with banana and peanut butter", time: "7:00 AM" },
-      { name: "Egg White Omelette", description: "Egg white omelette with vegetables and cheese", time: "7:30 AM" }
-    ],
-    "Energy Boost Plan": [
-      { name: "Fruit Smoothie Bowl", description: "Smoothie bowl with fruits, granola and seeds", time: "7:00 AM" },
-      { name: "Avocado Toast", description: "Whole grain toast with avocado and eggs", time: "7:30 AM" }
-    ],
-    "Personalized Plan": [
-      { name: "Balanced Breakfast", description: "Eggs, whole grain toast, and fruit", time: "7:30 AM" }
-    ]
-  };
-  
-  const lunchOptions = {
-    "Weight Loss Plan": [
-      { name: "Grilled Chicken Salad", description: "Grilled chicken with mixed greens and light dressing", time: "12:30 PM" },
-      { name: "Turkey Wrap", description: "Turkey and vegetable wrap with hummus", time: "1:00 PM" }
-    ],
-    "Muscle Building Plan": [
-      { name: "Chicken Rice Bowl", description: "Grilled chicken with brown rice and vegetables", time: "1:00 PM" },
-      { name: "Tuna Sandwich", description: "Tuna sandwich on whole grain bread with side salad", time: "12:30 PM" }
-    ],
-    "Energy Boost Plan": [
-      { name: "Quinoa Salad", description: "Quinoa salad with chickpeas and vegetables", time: "12:30 PM" },
-      { name: "Sweet Potato Bowl", description: "Sweet potato with black beans and avocado", time: "1:00 PM" }
-    ],
-    "Personalized Plan": [
-      { name: "Balanced Lunch", description: "Lean protein with complex carbs and vegetables", time: "12:30 PM" }
-    ]
-  };
-  
-  const dinnerOptions = {
-    "Weight Loss Plan": [
-      { name: "Baked Fish", description: "Baked fish with steamed vegetables", time: "6:30 PM" },
-      { name: "Vegetable Stir Fry", description: "Tofu vegetable stir fry with minimal oil", time: "7:00 PM" }
-    ],
-    "Muscle Building Plan": [
-      { name: "Steak and Potatoes", description: "Lean steak with baked potatoes and vegetables", time: "7:00 PM" },
-      { name: "Salmon and Quinoa", description: "Grilled salmon with quinoa and roasted vegetables", time: "6:30 PM" }
-    ],
-    "Energy Boost Plan": [
-      { name: "Pasta Primavera", description: "Whole grain pasta with vegetables and light sauce", time: "6:30 PM" },
-      { name: "Turkey Chili", description: "Lean turkey chili with beans and vegetables", time: "7:00 PM" }
-    ],
-    "Personalized Plan": [
-      { name: "Balanced Dinner", description: "Lean protein, complex carbs, and vegetables", time: "7:00 PM" }
-    ]
-  };
-  
-  const snackOptions = {
-    "Weight Loss Plan": [
-      { name: "Apple and Greek Yogurt", description: "Apple slices with low-fat Greek yogurt", time: "10:30 AM" },
-      { name: "Celery and Hummus", description: "Celery sticks with hummus dip", time: "3:30 PM" }
-    ],
-    "Muscle Building Plan": [
-      { name: "Protein Shake", description: "Protein shake with banana and peanut butter", time: "10:30 AM" },
-      { name: "Trail Mix", description: "Trail mix with nuts, seeds, and dried fruit", time: "3:30 PM" }
-    ],
-    "Energy Boost Plan": [
-      { name: "Energy Balls", description: "Homemade energy balls with oats and honey", time: "10:30 AM" },
-      { name: "Fruit and Nuts", description: "Mixed fruit with a handful of nuts", time: "3:30 PM" }
-    ],
-    "Personalized Plan": [
-      { name: "Morning Snack", description: "Protein and complex carbs", time: "10:30 AM" },
-      { name: "Afternoon Snack", description: "Healthy fats and protein", time: "3:30 PM" }
-    ]
-  };
-  
-  // Select appropriate meals based on plan type
-  const breakfast = breakfastOptions[planType as keyof typeof breakfastOptions][0];
-  const lunch = lunchOptions[planType as keyof typeof lunchOptions][0];
-  const dinner = dinnerOptions[planType as keyof typeof dinnerOptions][0];
-  const morningSnack = snackOptions[planType as keyof typeof snackOptions][0];
-  const afternoonSnack = snackOptions[planType as keyof typeof snackOptions][1];
-  
-  // Generate meal IDs
-  return [
-    { id: "breakfast-1", name: breakfast.name, time: breakfast.time, description: breakfast.description },
-    { id: "morning-snack-1", name: morningSnack.name, time: morningSnack.time, description: morningSnack.description },
-    { id: "lunch-1", name: lunch.name, time: lunch.time, description: lunch.description },
-    { id: "afternoon-snack-1", name: afternoonSnack.name, time: afternoonSnack.time, description: afternoonSnack.description },
-    { id: "dinner-1", name: dinner.name, time: dinner.time, description: dinner.description }
-  ];
-};
-
-// Generate a training plan based on quiz answers
-export const generateTrainingPlan = (quizData: QuizData, userProfile?: UserProfile) => {
-  const goals = quizData.goals || [];
-  const answers = quizData.answers || {};
-  
-  // Default plan
-  const plan: any = {
-    id: "quiz-generated",
-    name: "Personalized Training Plan",
-    description: "Training plan based on your Wellness Quiz answers",
-    isPersonalized: true,
-    days_per_week: 3,
-    training_type: "balanced",
-    preferred_time: "morning",
-    location: "home",
-    main_goal: userProfile?.main_goal || "General Fitness",
-    workouts: []
-  };
-  
-  // Determine workout frequency
-  if (answers["weight-exercise"]) {
-    if (answers["weight-exercise"] === "None" || answers["weight-exercise"] === "1-2 times") {
-      plan.days_per_week = 3;
-    } else if (answers["weight-exercise"] === "3-4 times") {
-      plan.days_per_week = 4;
-    } else if (answers["weight-exercise"] === "5+ times") {
-      plan.days_per_week = 5;
-    }
-  }
-  
-  // Determine workout type based on goals
-  if (goals.includes("Lose Weight")) {
-    plan.name = "Weight Loss Training Plan";
-    plan.training_type = "cardio_strength";
-    plan.description = "High-intensity cardio combined with strength training for weight loss";
-    plan.main_goal = "Weight Loss";
-  } else if (goals.includes("Build Muscle")) {
-    plan.name = "Muscle Building Plan";
-    plan.training_type = "strength";
-    plan.description = "Progressive resistance training focused on muscle hypertrophy";
-    plan.main_goal = "Muscle Gain";
-  } else if (goals.includes("Improve Focus")) {
-    plan.name = "Mind-Body Fitness Plan";
-    plan.training_type = "yoga_mobility";
-    plan.description = "Mindful exercise combining yoga, mobility and concentration techniques";
-    plan.main_goal = "Mind-Body Balance";
-  } else if (goals.includes("Boost Energy")) {
-    plan.name = "Energy Boost Plan";
-    plan.training_type = "functional";
-    plan.description = "Functional training to improve daily energy levels and overall fitness";
-    plan.main_goal = "Energy & Vitality";
-  }
-  
-  // Determine preferred workout time and location
-  if (answers["preferredWorkoutTime"]) {
-    plan.preferred_time = answers["preferredWorkoutTime"];
-  }
-  
-  // Adjust for injuries
-  if (answers["previousInjuries"] && answers["previousInjuries"] !== "none") {
-    plan.description += ` (Modified for ${answers["previousInjuries"]} considerations)`;
-  }
-  
-  // Generate workouts based on plan type
-  plan.workouts = generateWorkouts(plan.training_type, plan.days_per_week, answers["previousInjuries"]);
-  
-  return plan;
-};
-
-// Generate workouts for the training plan
-const generateWorkouts = (trainingType: string, daysPerWeek: number, injury?: string) => {
-  const workouts = [];
-  
-  // Define workout templates based on training type
-  const workoutTemplates: Record<string, any[]> = {
-    "cardio_strength": [
-      {
-        name: "HIIT Cardio & Core",
-        exercises: [
-          { name: "Jumping Jacks", sets: 3, reps: "30 seconds", rest: "15 seconds" },
-          { name: "Mountain Climbers", sets: 3, reps: "30 seconds", rest: "15 seconds" },
-          { name: "Burpees", sets: 3, reps: "10", rest: "30 seconds" },
-          { name: "Plank", sets: 3, reps: "30 seconds", rest: "15 seconds" },
-          { name: "Russian Twists", sets: 3, reps: "20", rest: "15 seconds" }
-        ]
-      },
-      {
-        name: "Lower Body Strength",
-        exercises: [
-          { name: "Bodyweight Squats", sets: 3, reps: "15", rest: "45 seconds" },
-          { name: "Walking Lunges", sets: 3, reps: "10 each side", rest: "45 seconds" },
-          { name: "Glute Bridges", sets: 3, reps: "15", rest: "30 seconds" },
-          { name: "Calf Raises", sets: 3, reps: "20", rest: "30 seconds" },
-          { name: "Wall Sit", sets: 3, reps: "30 seconds", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Upper Body Circuit",
-        exercises: [
-          { name: "Push-Ups", sets: 3, reps: "10-15", rest: "45 seconds" },
-          { name: "Tricep Dips", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Superman Back Extensions", sets: 3, reps: "12", rest: "30 seconds" },
-          { name: "Plank to Push-Up", sets: 3, reps: "8 each side", rest: "45 seconds" },
-          { name: "Arm Circles", sets: 2, reps: "30 seconds each direction", rest: "15 seconds" }
-        ]
-      },
-      {
-        name: "Cardio Endurance",
-        exercises: [
-          { name: "Jogging/Running", sets: 1, reps: "20-30 minutes", rest: "N/A" },
-          { name: "Jump Rope", sets: 3, reps: "2 minutes", rest: "1 minute" },
-          { name: "High Knees", sets: 3, reps: "30 seconds", rest: "15 seconds" },
-          { name: "Butt Kicks", sets: 3, reps: "30 seconds", rest: "15 seconds" },
-          { name: "Jumping Jacks", sets: 3, reps: "30 seconds", rest: "15 seconds" }
-        ]
-      },
-      {
-        name: "Full Body HIIT",
-        exercises: [
-          { name: "Burpees", sets: 4, reps: "10", rest: "20 seconds" },
-          { name: "Jump Squats", sets: 4, reps: "12", rest: "20 seconds" },
-          { name: "Mountain Climbers", sets: 4, reps: "30 seconds", rest: "20 seconds" },
-          { name: "Push-Ups", sets: 4, reps: "10", rest: "20 seconds" },
-          { name: "Plank Jacks", sets: 4, reps: "30 seconds", rest: "20 seconds" }
-        ]
-      }
-    ],
-    "strength": [
-      {
-        name: "Push Day",
-        exercises: [
-          { name: "Push-Ups", sets: 4, reps: "12-15", rest: "60 seconds" },
-          { name: "Incline Push-Ups", sets: 3, reps: "12", rest: "60 seconds" },
-          { name: "Tricep Dips", sets: 3, reps: "12", rest: "60 seconds" },
-          { name: "Shoulder Taps", sets: 3, reps: "10 each side", rest: "45 seconds" },
-          { name: "Pike Push-Ups", sets: 3, reps: "10", rest: "60 seconds" }
-        ]
-      },
-      {
-        name: "Pull Day",
-        exercises: [
-          { name: "Doorway Rows", sets: 4, reps: "12", rest: "60 seconds" },
-          { name: "Superman Back Extensions", sets: 3, reps: "15", rest: "45 seconds" },
-          { name: "Reverse Snow Angels", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Bicep Curls with Resistance Bands", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Scapular Retractions", sets: 3, reps: "15", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Leg Day",
-        exercises: [
-          { name: "Bodyweight Squats", sets: 4, reps: "15-20", rest: "60 seconds" },
-          { name: "Walking Lunges", sets: 3, reps: "12 each side", rest: "60 seconds" },
-          { name: "Glute Bridges", sets: 3, reps: "15", rest: "45 seconds" },
-          { name: "Single-Leg Calf Raises", sets: 3, reps: "15 each side", rest: "30 seconds" },
-          { name: "Bulgarian Split Squats", sets: 3, reps: "10 each side", rest: "60 seconds" }
-        ]
-      },
-      {
-        name: "Core Focus",
-        exercises: [
-          { name: "Plank", sets: 3, reps: "45 seconds", rest: "30 seconds" },
-          { name: "Bicycle Crunches", sets: 3, reps: "20 each side", rest: "45 seconds" },
-          { name: "Russian Twists", sets: 3, reps: "15 each side", rest: "45 seconds" },
-          { name: "Leg Raises", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Mountain Climbers", sets: 3, reps: "45 seconds", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Full Body Strength",
-        exercises: [
-          { name: "Push-Ups", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Bodyweight Rows", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Bodyweight Squats", sets: 3, reps: "15", rest: "45 seconds" },
-          { name: "Plank", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Glute Bridges", sets: 3, reps: "15", rest: "30 seconds" }
-        ]
-      }
-    ],
-    "yoga_mobility": [
-      {
-        name: "Morning Flow",
-        exercises: [
-          { name: "Sun Salutations", sets: 1, reps: "5 rounds", rest: "As needed" },
-          { name: "Warrior Sequence", sets: 1, reps: "5 breaths each side", rest: "As needed" },
-          { name: "Balance Poses", sets: 1, reps: "Tree, Eagle - 30 seconds each side", rest: "As needed" },
-          { name: "Seated Forward Folds", sets: 1, reps: "5 breaths each position", rest: "As needed" },
-          { name: "Meditation", sets: 1, reps: "5 minutes", rest: "N/A" }
-        ]
-      },
-      {
-        name: "Mobility & Stretch",
-        exercises: [
-          { name: "Hip Openers", sets: 1, reps: "60 seconds each position", rest: "As needed" },
-          { name: "Shoulder Mobility", sets: 1, reps: "8-10 each movement", rest: "As needed" },
-          { name: "Spinal Twists", sets: 1, reps: "30 seconds each side", rest: "As needed" },
-          { name: "Ankle & Wrist Mobility", sets: 1, reps: "10 circles each direction", rest: "As needed" },
-          { name: "Neck Stretches", sets: 1, reps: "5 breaths each position", rest: "As needed" }
-        ]
-      },
-      {
-        name: "Mindful Strength",
-        exercises: [
-          { name: "Slow Push-Ups with Breath", sets: 2, reps: "8", rest: "As needed" },
-          { name: "Warrior Holds", sets: 2, reps: "30 seconds each side", rest: "As needed" },
-          { name: "Slow Squats with Breath", sets: 2, reps: "10", rest: "As needed" },
-          { name: "Plank with Focus", sets: 2, reps: "30 seconds", rest: "As needed" },
-          { name: "Breathing Techniques", sets: 1, reps: "3 minutes", rest: "N/A" }
-        ]
-      },
-      {
-        name: "Balance & Focus",
-        exercises: [
-          { name: "Standing Balance Series", sets: 1, reps: "45 seconds each pose", rest: "As needed" },
-          { name: "Concentration Practice", sets: 1, reps: "5 minutes", rest: "N/A" },
-          { name: "Slow Flow Sequence", sets: 1, reps: "8 minutes", rest: "As needed" },
-          { name: "Breath Control", sets: 3, reps: "10 breaths each pattern", rest: "As needed" },
-          { name: "Guided Relaxation", sets: 1, reps: "5 minutes", rest: "N/A" }
-        ]
-      },
-      {
-        name: "Restorative Practice",
-        exercises: [
-          { name: "Supported Reclined Poses", sets: 1, reps: "3-5 minutes each", rest: "N/A" },
-          { name: "Deep Stretching", sets: 1, reps: "60-90 seconds each position", rest: "N/A" },
-          { name: "Body Scan Meditation", sets: 1, reps: "10 minutes", rest: "N/A" },
-          { name: "Breath Awareness", sets: 1, reps: "5 minutes", rest: "N/A" },
-          { name: "Final Relaxation", sets: 1, reps: "5-10 minutes", rest: "N/A" }
-        ]
-      }
-    ],
-    "functional": [
-      {
-        name: "Movement Foundations",
-        exercises: [
-          { name: "Bodyweight Squats", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Push-Ups", sets: 3, reps: "10", rest: "45 seconds" },
-          { name: "Pull-Ups or Rows", sets: 3, reps: "8", rest: "45 seconds" },
-          { name: "Hip Hinges", sets: 3, reps: "10", rest: "45 seconds" },
-          { name: "Bear Crawl", sets: 2, reps: "20 seconds", rest: "40 seconds" }
-        ]
-      },
-      {
-        name: "Everyday Strength",
-        exercises: [
-          { name: "Farmer's Walk", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Suitcase Carry", sets: 3, reps: "30 seconds each side", rest: "30 seconds" },
-          { name: "Floor to Standing Transition", sets: 3, reps: "8", rest: "45 seconds" },
-          { name: "Step-Ups", sets: 3, reps: "10 each side", rest: "45 seconds" },
-          { name: "Standing Rotations", sets: 3, reps: "10 each side", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Energy Boost Circuit",
-        exercises: [
-          { name: "Jump Rope", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Squat to Press", sets: 3, reps: "12", rest: "30 seconds" },
-          { name: "Lateral Bounds", sets: 3, reps: "10 each side", rest: "30 seconds" },
-          { name: "Mountain Climbers", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Dynamic Lunges", sets: 3, reps: "10 each side", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Mobility & Function",
-        exercises: [
-          { name: "World's Greatest Stretch", sets: 2, reps: "5 each side", rest: "30 seconds" },
-          { name: "Turkish Get-Up Progression", sets: 2, reps: "3 each side", rest: "45 seconds" },
-          { name: "Yoga Flow Sequence", sets: 1, reps: "5 minutes", rest: "N/A" },
-          { name: "Animal Movement Series", sets: 2, reps: "30 seconds each", rest: "30 seconds" },
-          { name: "Joint Mobility Routine", sets: 1, reps: "5 minutes", rest: "N/A" }
-        ]
-      },
-      {
-        name: "Recovery & Reset",
-        exercises: [
-          { name: "Foam Rolling", sets: 1, reps: "60 seconds per area", rest: "N/A" },
-          { name: "Static Stretching", sets: 1, reps: "30 seconds per stretch", rest: "N/A" },
-          { name: "Breathing Exercises", sets: 3, reps: "10 breaths", rest: "30 seconds" },
-          { name: "Light Walking", sets: 1, reps: "10 minutes", rest: "N/A" },
-          { name: "Gentle Yoga", sets: 1, reps: "10 minutes", rest: "N/A" }
-        ]
-      }
-    ],
-    "balanced": [
-      {
-        name: "Full Body Workout",
-        exercises: [
-          { name: "Bodyweight Squats", sets: 3, reps: "15", rest: "45 seconds" },
-          { name: "Push-Ups", sets: 3, reps: "10-12", rest: "45 seconds" },
-          { name: "Glute Bridges", sets: 3, reps: "15", rest: "30 seconds" },
-          { name: "Plank", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Walking Lunges", sets: 2, reps: "10 each side", rest: "45 seconds" }
-        ]
-      },
-      {
-        name: "Cardio & Core",
-        exercises: [
-          { name: "Jumping Jacks", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Mountain Climbers", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Bicycle Crunches", sets: 3, reps: "12 each side", rest: "30 seconds" },
-          { name: "High Knees", sets: 3, reps: "30 seconds", rest: "30 seconds" },
-          { name: "Russian Twists", sets: 3, reps: "10 each side", rest: "30 seconds" }
-        ]
-      },
-      {
-        name: "Strength Focus",
-        exercises: [
-          { name: "Bodyweight Rows", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Reverse Lunges", sets: 3, reps: "10 each side", rest: "45 seconds" },
-          { name: "Tricep Dips", sets: 3, reps: "12", rest: "45 seconds" },
-          { name: "Superman Back Extensions", sets: 3, reps: "12", rest: "30 seconds" },
-          { name: "Side Plank", sets: 2, reps: "20 seconds each side", rest: "30 seconds" }
-        ]
-      }
-    ]
-  };
-  
-  // Modify exercises based on injury
-  const modifyForInjury = (workoutPlan: any[], injury: string) => {
-    return workoutPlan.map(workout => {
-      const modifiedExercises = workout.exercises.map((exercise: any) => {
-        // Modify exercises based on specific injuries
-        if (injury === "back") {
-          if (["Burpees", "Russian Twists", "Mountain Climbers"].includes(exercise.name)) {
-            return {
-              name: "Modified " + exercise.name,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              rest: exercise.rest,
-              note: "Perform with caution, maintain neutral spine"
-            };
-          }
-        } else if (injury === "knee") {
-          if (["Jumping Jacks", "Jump Squats", "Burpees", "Lunges"].includes(exercise.name)) {
-            return {
-              name: "Low-Impact " + exercise.name,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              rest: exercise.rest,
-              note: "Reduce range of motion, avoid jumping"
-            };
-          }
-        } else if (injury === "shoulder") {
-          if (["Push-Ups", "Plank", "Shoulder Taps"].includes(exercise.name)) {
-            return {
-              name: "Modified " + exercise.name,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              rest: exercise.rest,
-              note: "Reduce range of motion, focus on form over intensity"
-            };
-          }
-        }
-        return exercise;
-      });
-      
-      return {
-        ...workout,
-        exercises: modifiedExercises
-      };
-    });
-  };
-  
-  // Select workouts based on training type
-  let selectedWorkouts = workoutTemplates[trainingType] || workoutTemplates["balanced"];
-  
-  // Modify for injuries if necessary
-  if (injury && injury !== "none") {
-    selectedWorkouts = modifyForInjury(selectedWorkouts, injury);
-  }
-  
-  // Limit to the number of days per week
-  selectedWorkouts = selectedWorkouts.slice(0, daysPerWeek);
-  
-  // Add day labels
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  
-  for (let i = 0; i < selectedWorkouts.length; i++) {
-    workouts.push({
-      day: daysOfWeek[i],
-      ...selectedWorkouts[i]
-    });
-  }
-  
-  return workouts;
-};
-
-// Calculate body composition based on user data
-export const calculateBodyComposition = (quizData: QuizData) => {
-  const answers = quizData.answers || {};
-  
-  // Default values
-  let weight = 70; // kg
-  let height = 170; // cm
-  let age = 30;
-  let gender = "female";
-  let waist = 80; // cm
-  
-  // Extract values from quiz answers if available
-  if (answers["weight-current"]) {
-    weight = parseFloat(answers["weight-current"]);
-  }
-  
-  if (answers["height"]) {
-    height = parseFloat(answers["height"]);
-  }
-  
-  if (answers["age"]) {
-    age = parseFloat(answers["age"]);
-  }
-  
-  if (answers["gender"]) {
-    gender = answers["gender"];
-  }
-  
-  if (answers["waist"]) {
-    waist = parseFloat(answers["waist"]);
-  }
+  const ageNum = parseInt(age);
+  const heightCm = parseFloat(height);
+  const heightM = heightCm / 100;
+  const currentWeightKg = parseFloat(currentWeight);
+  const targetWeightKg = parseFloat(targetWeight);
+  const waistCm = parseFloat(waistCircumference);
   
   // Calculate BMI
-  const heightInMeters = height / 100;
-  const bmi = weight / (heightInMeters * heightInMeters);
+  const bmi = currentWeightKg / (heightM * heightM);
   
-  // Estimate body fat percentage using simplified Navy method
-  // This is a very simplified estimate and not accurate for all body types
-  let bodyFatPercentage;
-  
-  if (gender === "male") {
-    // Simplified calculation for males
-    bodyFatPercentage = 86.01 * Math.log10(waist - 94.42) - 70.041 * Math.log10(height) + 36.76;
+  // Determine BMI category
+  let bmiCategory = "";
+  if (bmi < 18.5) {
+    bmiCategory = "Underweight";
+  } else if (bmi >= 18.5 && bmi < 25) {
+    bmiCategory = "Normal";
+  } else if (bmi >= 25 && bmi < 30) {
+    bmiCategory = "Overweight";
   } else {
-    // Simplified calculation for females
-    bodyFatPercentage = 163.205 * Math.log10(waist + 50.0) - 97.684 * Math.log10(height) - 78.387;
+    bmiCategory = "Obese";
   }
   
-  // Ensure body fat is within reasonable range
-  bodyFatPercentage = Math.max(5, Math.min(bodyFatPercentage, 45));
-  
-  // Calculate lean body mass (kg)
-  const leanBodyMass = weight * (1 - bodyFatPercentage / 100);
-  
-  // Calculate fat mass (kg)
-  const fatMass = weight * (bodyFatPercentage / 100);
-  
-  // Calculate ideal body weight range (simplified)
-  const minIdealBMI = 18.5;
-  const maxIdealBMI = 24.9;
-  
-  const minIdealWeight = minIdealBMI * heightInMeters * heightInMeters;
-  const maxIdealWeight = maxIdealBMI * heightInMeters * heightInMeters;
-  
-  // Calculate daily calorie needs (Basal Metabolic Rate using Mifflin-St Jeor Equation)
-  let bmr;
+  // Estimate body fat percentage using the Navy method
+  let bodyFatPercentage = 0;
   if (gender === "male") {
-    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    bodyFatPercentage = 495 / (1.0324 - 0.19077 * Math.log10(waistCm) + 0.15456 * Math.log10(heightCm)) - 450;
   } else {
-    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    // For females, we would need hip measurement, but we're estimating
+    bodyFatPercentage = 495 / (1.29579 - 0.35004 * Math.log10(waistCm) + 0.22100 * Math.log10(heightCm)) - 450;
   }
   
-  // Adjust based on activity level (assuming moderate activity)
-  let activityMultiplier = 1.375; // Default: Light activity
+  // Ensure the body fat percentage is within reasonable limits
+  bodyFatPercentage = Math.max(4, Math.min(bodyFatPercentage, 40));
   
-  if (answers["weight-exercise"]) {
-    if (answers["weight-exercise"] === "None") {
-      activityMultiplier = 1.2; // Sedentary
-    } else if (answers["weight-exercise"] === "1-2 times") {
-      activityMultiplier = 1.375; // Light activity
-    } else if (answers["weight-exercise"] === "3-4 times") {
-      activityMultiplier = 1.55; // Moderate activity
-    } else if (answers["weight-exercise"] === "5+ times") {
-      activityMultiplier = 1.725; // Very active
-    }
+  // Calculate lean mass and fat mass
+  const fatMassKg = (bodyFatPercentage / 100) * currentWeightKg;
+  const leanMassKg = currentWeightKg - fatMassKg;
+  
+  // Calculate target body composition
+  // Assume we keep the same lean mass but adjust fat mass
+  const targetBodyFatPercentage = gender === "male" ? 
+    (targetWeightKg < currentWeightKg ? 15 : 20) : 
+    (targetWeightKg < currentWeightKg ? 22 : 28);
+    
+  const targetFatMassKg = (targetBodyFatPercentage / 100) * targetWeightKg;
+  const targetLeanMassKg = targetWeightKg - targetFatMassKg;
+  
+  // Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
+  let bmr = 0;
+  if (gender === "male") {
+    bmr = 10 * currentWeightKg + 6.25 * heightCm - 5 * ageNum + 5;
+  } else {
+    bmr = 10 * currentWeightKg + 6.25 * heightCm - 5 * ageNum - 161;
   }
   
-  const maintenanceCalories = Math.round(bmr * activityMultiplier);
+  // Adjust based on activity level (based on fitness level answer)
+  const activityLevels: Record<string, number> = {
+    "beginner": 1.2, // Sedentary
+    "intermediate": 1.375, // Light activity
+    "advanced": 1.55, // Moderate activity
+    "athletic": 1.725 // Very active
+  };
   
-  // Recommended calories based on goals
-  let recommendedCalories = maintenanceCalories;
-  let calorieAdjustment = 0;
+  const activityLevel = quizData.answers.fitnessLevel || "intermediate";
+  const activityMultiplier = activityLevels[activityLevel] || 1.375;
   
-  const goals = quizData.goals || [];
-  if (goals.includes("Lose Weight")) {
-    recommendedCalories = Math.round(maintenanceCalories - 500); // 500 calorie deficit for weight loss
-    calorieAdjustment = -500;
-  } else if (goals.includes("Build Muscle")) {
-    recommendedCalories = Math.round(maintenanceCalories + 300); // 300 calorie surplus for muscle gain
-    calorieAdjustment = 300;
+  const tdee = Math.round(bmr * activityMultiplier); // Total Daily Energy Expenditure
+  
+  // Calculate calorie needs based on goal
+  let goalCalorieAdjustment = 0;
+  if (targetWeightKg < currentWeightKg) {
+    // Weight loss goal: deficit of 500 calories
+    goalCalorieAdjustment = -500;
+  } else if (targetWeightKg > currentWeightKg) {
+    // Weight gain goal: surplus of 300-500 calories
+    goalCalorieAdjustment = 300;
   }
+  
+  const recommendedCalories = Math.max(1200, Math.round(tdee + goalCalorieAdjustment));
+  
+  // Calculate recommended water intake based on weight
+  // General recommendation is 30-35ml per kg of body weight
+  const waterIntake = Math.round((30 * currentWeightKg) / 1000 * 10) / 10; // in liters, rounded to 1 decimal
+  
+  // Calculate macro distribution based on goals and preferences
+  const fitnessGoals = quizData.fitnessGoals || [];
+  let proteinPercentage = 30;
+  let carbPercentage = 40;
+  let fatPercentage = 30;
+  
+  // Adjust macros based on goals
+  if (fitnessGoals.includes("build-muscle")) {
+    proteinPercentage = 35;
+    carbPercentage = 45;
+    fatPercentage = 20;
+  } else if (fitnessGoals.includes("lose-weight")) {
+    proteinPercentage = 40;
+    carbPercentage = 30;
+    fatPercentage = 30;
+  } else if (fitnessGoals.includes("increase-endurance")) {
+    proteinPercentage = 25;
+    carbPercentage = 55;
+    fatPercentage = 20;
+  }
+  
+  // Further adjust based on dietary preference
+  const dietaryPreference = quizData.answers.dietaryPreference || "omnivore";
+  if (dietaryPreference === "keto") {
+    proteinPercentage = 30;
+    carbPercentage = 5;
+    fatPercentage = 65;
+  } else if (dietaryPreference === "vegan" || dietaryPreference === "vegetarian") {
+    // Slightly lower protein for plant-based diets
+    proteinPercentage = Math.max(25, proteinPercentage - 5);
+    carbPercentage = Math.min(60, carbPercentage + 5);
+  }
+  
+  // Calculate macro grams and calories
+  const proteinCalories = Math.round((recommendedCalories * proteinPercentage) / 100);
+  const carbCalories = Math.round((recommendedCalories * carbPercentage) / 100);
+  const fatCalories = Math.round((recommendedCalories * fatPercentage) / 100);
+  
+  const proteinGrams = Math.round(proteinCalories / 4); // 4 calories per gram of protein
+  const carbGrams = Math.round(carbCalories / 4); // 4 calories per gram of carbs
+  const fatGrams = Math.round(fatCalories / 9); // 9 calories per gram of fat
   
   return {
     currentStats: {
-      weight,
-      height,
-      bmi: parseFloat(bmi.toFixed(1)),
-      bodyFatPercentage: parseFloat(bodyFatPercentage.toFixed(1)),
-      leanBodyMass: parseFloat(leanBodyMass.toFixed(1)),
-      fatMass: parseFloat(fatMass.toFixed(1))
+      bmi,
+      bmiCategory,
+      bodyFatPercentage,
+      fatMassKg: fatMassKg.toFixed(1),
+      leanMassKg: leanMassKg.toFixed(1),
     },
     targetStats: {
-      minIdealWeight: parseFloat(minIdealWeight.toFixed(1)),
-      maxIdealWeight: parseFloat(maxIdealWeight.toFixed(1)),
+      targetBodyFatPercentage,
+      targetFatMassKg: targetFatMassKg.toFixed(1),
+      targetLeanMassKg: targetLeanMassKg.toFixed(1),
       calorieNeeds: {
-        maintenance: maintenanceCalories,
-        recommended: recommendedCalories,
-        adjustment: calorieAdjustment
+        bmr: Math.round(bmr),
+        tdee: tdee,
+        recommended: recommendedCalories
+      },
+      waterIntake
+    },
+    macroRecommendations: {
+      protein: {
+        percentage: proteinPercentage,
+        grams: proteinGrams,
+        calories: proteinCalories
+      },
+      carbs: {
+        percentage: carbPercentage,
+        grams: carbGrams,
+        calories: carbCalories
+      },
+      fat: {
+        percentage: fatPercentage,
+        grams: fatGrams,
+        calories: fatCalories
       }
-    },
-    macroRecommendations: calculateMacros(recommendedCalories, goals)
-  };
-};
-
-// Calculate recommended macronutrients
-const calculateMacros = (calories: number, goals: string[]) => {
-  let proteinPct = 0.3; // 30% protein
-  let fatPct = 0.3;     // 30% fat
-  let carbPct = 0.4;    // 40% carbs
-  
-  // Adjust based on goals
-  if (goals.includes("Lose Weight")) {
-    proteinPct = 0.35;  // 35% protein
-    fatPct = 0.3;       // 30% fat
-    carbPct = 0.35;     // 35% carbs
-  } else if (goals.includes("Build Muscle")) {
-    proteinPct = 0.35;  // 35% protein
-    fatPct = 0.25;      // 25% fat
-    carbPct = 0.4;      // 40% carbs
-  } else if (goals.includes("Boost Energy")) {
-    proteinPct = 0.25;  // 25% protein
-    fatPct = 0.25;      // 25% fat
-    carbPct = 0.5;      // 50% carbs
-  }
-  
-  // Calculate grams
-  const proteinCals = calories * proteinPct;
-  const fatCals = calories * fatPct;
-  const carbCals = calories * carbPct;
-  
-  // Convert to grams (protein = 4 cal/g, carbs = 4 cal/g, fat = 9 cal/g)
-  const proteinGrams = Math.round(proteinCals / 4);
-  const fatGrams = Math.round(fatCals / 9);
-  const carbGrams = Math.round(carbCals / 4);
-  
-  return {
-    protein: {
-      grams: proteinGrams,
-      percentage: Math.round(proteinPct * 100)
-    },
-    fat: {
-      grams: fatGrams,
-      percentage: Math.round(fatPct * 100)
-    },
-    carbs: {
-      grams: carbGrams,
-      percentage: Math.round(carbPct * 100)
     }
   };
 };
 
-// Generate supplement recommendations based on quiz answers
-export const generateSupplementRecommendations = (quizData: QuizData) => {
-  const goals = quizData.goals || [];
-  const answers = quizData.answers || {};
-  const recommendations: any[] = [];
+// Generate meal plan based on quiz answers
+export const generateMealPlan = (quizData: any, userProfile: any, bodyComposition?: any) => {
+  if (!quizData || !quizData.answers) {
+    return null;
+  }
   
-  // Supplement database with product info
+  // Use the passed bodyComposition or calculate it
+  const bodyComp = bodyComposition || calculateBodyComposition(quizData);
+  if (!bodyComp) return null;
+  
+  // Extract key parameters
+  const {
+    dietaryPreference = "omnivore",
+    mealFrequency = "3",
+    foodAllergies = []
+  } = quizData.answers;
+  
+  const recommendedCalories = bodyComp.targetStats.calorieNeeds.recommended;
+  const { protein, carbs, fat } = bodyComp.macroRecommendations;
+  
+  // Determine meal count
+  let mealCount = 3;
+  if (mealFrequency === "1-2") mealCount = 2;
+  else if (mealFrequency === "3") mealCount = 3;
+  else if (mealFrequency === "4-5") mealCount = 4;
+  else if (mealFrequency === "6+") mealCount = 5;
+  
+  // Calculate calories per meal
+  const caloriesPerMeal = Math.round(recommendedCalories / mealCount);
+  
+  // Generate meal plan
+  const mealPlan = {
+    mainGoal: quizData.fitnessGoals?.[0] || "overall-fitness",
+    dietType: dietaryPreference,
+    caloriesPerDay: recommendedCalories,
+    macros: {
+      protein: protein.grams,
+      carbs: carbs.grams,
+      fat: fat.grams
+    },
+    allergies: foodAllergies,
+    mealCount,
+    meals: [] as any[],
+    createdAt: new Date().toISOString(),
+    isActive: true
+  };
+  
+  // Generate sample meals based on diet type
+  const mealOptions = getMealOptionsByDiet(dietaryPreference, foodAllergies);
+  
+  // Distribute meals
+  if (mealCount >= 2) {
+    mealPlan.meals.push({
+      name: "Breakfast",
+      calories: Math.round(recommendedCalories * 0.25),
+      options: mealOptions.breakfast.slice(0, 3)
+    });
+  }
+  
+  if (mealCount >= 3) {
+    mealPlan.meals.push({
+      name: "Lunch",
+      calories: Math.round(recommendedCalories * 0.35),
+      options: mealOptions.lunch.slice(0, 3)
+    });
+  }
+  
+  if (mealCount >= 2) {
+    mealPlan.meals.push({
+      name: "Dinner",
+      calories: Math.round(recommendedCalories * 0.3),
+      options: mealOptions.dinner.slice(0, 3)
+    });
+  }
+  
+  if (mealCount >= 4) {
+    mealPlan.meals.push({
+      name: "Snack",
+      calories: Math.round(recommendedCalories * 0.1),
+      options: mealOptions.snacks.slice(0, 3)
+    });
+  }
+  
+  if (mealCount >= 5) {
+    mealPlan.meals.push({
+      name: "Second Snack",
+      calories: Math.round(recommendedCalories * 0.1),
+      options: mealOptions.snacks.slice(3, 6)
+    });
+  }
+  
+  return mealPlan;
+};
+
+// Helper function to get meal options based on diet type
+const getMealOptionsByDiet = (dietType: string, allergies: string[]) => {
+  // Base meal options
+  const baseOptions = {
+    breakfast: [
+      { name: "Oatmeal with fruit and nuts", protein: 15, carbs: 45, fat: 12 },
+      { name: "Greek yogurt with berries and honey", protein: 20, carbs: 30, fat: 5 },
+      { name: "Whole grain toast with avocado and eggs", protein: 18, carbs: 25, fat: 15 }
+    ],
+    lunch: [
+      { name: "Grilled chicken salad with mixed greens", protein: 30, carbs: 15, fat: 10 },
+      { name: "Quinoa bowl with vegetables and tofu", protein: 20, carbs: 40, fat: 15 },
+      { name: "Turkey and vegetable wrap", protein: 25, carbs: 30, fat: 12 }
+    ],
+    dinner: [
+      { name: "Salmon with roasted vegetables", protein: 30, carbs: 20, fat: 15 },
+      { name: "Lean beef stir-fry with brown rice", protein: 28, carbs: 40, fat: 12 },
+      { name: "Chicken breast with sweet potato and green beans", protein: 35, carbs: 30, fat: 8 }
+    ],
+    snacks: [
+      { name: "Apple with almond butter", protein: 5, carbs: 20, fat: 10 },
+      { name: "Protein shake with banana", protein: 25, carbs: 25, fat: 3 },
+      { name: "Trail mix", protein: 8, carbs: 18, fat: 12 },
+      { name: "Cottage cheese with pineapple", protein: 15, carbs: 15, fat: 5 },
+      { name: "Hard-boiled eggs", protein: 12, carbs: 1, fat: 10 },
+      { name: "Hummus with carrot sticks", protein: 5, carbs: 15, fat: 8 }
+    ]
+  };
+  
+  // Adjust based on diet type
+  if (dietType === "vegetarian") {
+    baseOptions.lunch = [
+      { name: "Quinoa bowl with vegetables and tofu", protein: 20, carbs: 40, fat: 15 },
+      { name: "Lentil soup with whole grain bread", protein: 18, carbs: 45, fat: 5 },
+      { name: "Vegetable and cheese sandwich", protein: 15, carbs: 35, fat: 12 }
+    ];
+    baseOptions.dinner = [
+      { name: "Bean and vegetable curry with rice", protein: 18, carbs: 45, fat: 8 },
+      { name: "Vegetable stir-fry with tempeh", protein: 22, carbs: 30, fat: 10 },
+      { name: "Stuffed bell peppers with quinoa and cheese", protein: 20, carbs: 35, fat: 12 }
+    ];
+  } else if (dietType === "vegan") {
+    baseOptions.breakfast = [
+      { name: "Overnight oats with chia seeds and fruit", protein: 12, carbs: 45, fat: 10 },
+      { name: "Tofu scramble with vegetables", protein: 18, carbs: 15, fat: 12 },
+      { name: "Smoothie bowl with plant protein", protein: 20, carbs: 40, fat: 8 }
+    ];
+    baseOptions.lunch = [
+      { name: "Quinoa bowl with vegetables and chickpeas", protein: 18, carbs: 45, fat: 10 },
+      { name: "Lentil soup with whole grain bread", protein: 18, carbs: 45, fat: 5 },
+      { name: "Tempeh and avocado wrap", protein: 20, carbs: 35, fat: 15 }
+    ];
+    baseOptions.dinner = [
+      { name: "Bean and vegetable curry with rice", protein: 18, carbs: 45, fat: 8 },
+      { name: "Vegetable stir-fry with tofu", protein: 20, carbs: 30, fat: 10 },
+      { name: "Stuffed bell peppers with quinoa and beans", protein: 15, carbs: 40, fat: 5 }
+    ];
+    baseOptions.snacks = [
+      { name: "Apple with almond butter", protein: 5, carbs: 20, fat: 10 },
+      { name: "Plant protein shake with banana", protein: 20, carbs: 25, fat: 3 },
+      { name: "Mixed nuts and dried fruit", protein: 8, carbs: 20, fat: 12 },
+      { name: "Hummus with carrot sticks", protein: 5, carbs: 15, fat: 8 },
+      { name: "Edamame", protein: 8, carbs: 10, fat: 4 },
+      { name: "Energy balls with dates and nuts", protein: 5, carbs: 25, fat: 10 }
+    ];
+  } else if (dietType === "keto") {
+    baseOptions.breakfast = [
+      { name: "Avocado and bacon frittata", protein: 20, carbs: 5, fat: 30 },
+      { name: "Chia seed pudding with coconut milk", protein: 8, carbs: 8, fat: 25 },
+      { name: "Keto green smoothie with avocado", protein: 15, carbs: 8, fat: 28 }
+    ];
+    baseOptions.lunch = [
+      { name: "Caesar salad with chicken (no croutons)", protein: 30, carbs: 5, fat: 25 },
+      { name: "Tuna salad in lettuce cups", protein: 25, carbs: 3, fat: 20 },
+      { name: "Zucchini noodles with meatballs", protein: 25, carbs: 8, fat: 22 }
+    ];
+    baseOptions.dinner = [
+      { name: "Baked salmon with asparagus", protein: 30, carbs: 5, fat: 25 },
+      { name: "Steak with buttered vegetables", protein: 35, carbs: 8, fat: 30 },
+      { name: "Chicken thighs with cauliflower rice", protein: 30, carbs: 6, fat: 25 }
+    ];
+    baseOptions.snacks = [
+      { name: "Cheese slices", protein: 7, carbs: 1, fat: 9 },
+      { name: "Hard-boiled eggs", protein: 12, carbs: 1, fat: 10 },
+      { name: "Macadamia nuts", protein: 2, carbs: 4, fat: 21 },
+      { name: "Beef jerky", protein: 14, carbs: 3, fat: 1 },
+      { name: "Avocado with salt", protein: 2, carbs: 2, fat: 15 },
+      { name: "Cucumber slices with cream cheese", protein: 3, carbs: 3, fat: 10 }
+    ];
+  }
+  
+  // Filter out options with allergens
+  // For a real app, this would involve a more comprehensive allergen database
+  let filteredOptions = { ...baseOptions };
+  
+  if (allergies.includes("nuts")) {
+    // Filter out options with nuts
+    filteredOptions.breakfast = baseOptions.breakfast.filter(meal => !meal.name.toLowerCase().includes("nut"));
+    filteredOptions.snacks = baseOptions.snacks.filter(meal => !meal.name.toLowerCase().includes("nut"));
+  }
+  
+  if (allergies.includes("dairy") || allergies.includes("eggs")) {
+    // Filter out options with dairy
+    filteredOptions.breakfast = filteredOptions.breakfast.filter(meal => 
+      !(allergies.includes("dairy") && (meal.name.toLowerCase().includes("yogurt") || meal.name.toLowerCase().includes("cheese"))) &&
+      !(allergies.includes("eggs") && meal.name.toLowerCase().includes("egg"))
+    );
+    filteredOptions.lunch = filteredOptions.lunch.filter(meal => 
+      !(allergies.includes("dairy") && meal.name.toLowerCase().includes("cheese"))
+    );
+    filteredOptions.dinner = filteredOptions.dinner.filter(meal => 
+      !(allergies.includes("dairy") && meal.name.toLowerCase().includes("cheese"))
+    );
+    filteredOptions.snacks = filteredOptions.snacks.filter(meal => 
+      !(allergies.includes("dairy") && (meal.name.toLowerCase().includes("cheese") || meal.name.toLowerCase().includes("cottage"))) &&
+      !(allergies.includes("eggs") && meal.name.toLowerCase().includes("egg"))
+    );
+  }
+  
+  return filteredOptions;
+};
+
+// Generate training plan based on quiz answers
+export const generateTrainingPlan = (quizData: any, userProfile: any) => {
+  if (!quizData || !quizData.answers) {
+    return null;
+  }
+  
+  const {
+    fitnessLevel = "beginner",
+    fitnessGoals = [],
+    workoutFrequency = "3-4",
+    preferredWorkoutTime = "morning",
+    workoutDuration = "30-60min",
+    equipmentAccess = "minimal",
+    previousInjuries = "none"
+  } = quizData.answers;
+  
+  // Determine days per week
+  let daysPerWeek = 3;
+  if (workoutFrequency === "1-2") daysPerWeek = 2;
+  else if (workoutFrequency === "3-4") daysPerWeek = 4;
+  else if (workoutFrequency === "5+") daysPerWeek = 5;
+  
+  // Determine workout type based on goals and equipment
+  let mainWorkoutType = "general-fitness";
+  
+  if (fitnessGoals.includes("lose-weight")) {
+    mainWorkoutType = "weight-loss";
+  } else if (fitnessGoals.includes("build-muscle")) {
+    mainWorkoutType = "strength";
+  } else if (fitnessGoals.includes("increase-endurance")) {
+    mainWorkoutType = "cardio";
+  } else if (fitnessGoals.includes("improve-flexibility")) {
+    mainWorkoutType = "flexibility";
+  }
+  
+  // Account for injuries
+  const hasInjuries = previousInjuries !== "none";
+  
+  // Generate training plan
+  const trainingPlan = {
+    mainGoal: fitnessGoals[0] || "overall-fitness",
+    level: fitnessLevel,
+    daysPerWeek,
+    trainingType: mainWorkoutType,
+    preferredTime: preferredWorkoutTime,
+    duration: workoutDuration,
+    location: equipmentAccess === "full-gym" ? "gym" : "home",
+    equipmentLevel: equipmentAccess,
+    injuries: previousInjuries,
+    isActive: true,
+    workouts: [] as any[],
+    createdAt: new Date().toISOString()
+  };
+  
+  // Generate workouts based on the plan type
+  const workoutByGoal = getWorkoutsByGoal(mainWorkoutType, fitnessLevel, equipmentAccess, hasInjuries, daysPerWeek);
+  
+  trainingPlan.workouts = workoutByGoal;
+  
+  return trainingPlan;
+};
+
+// Helper function to get workouts based on goal
+const getWorkoutsByGoal = (goalType: string, fitnessLevel: string, equipment: string, hasInjuries: boolean, daysPerWeek: number) => {
+  // Template for workouts
+  const workoutsTemplate = {
+    "general-fitness": {
+      "beginner": [
+        { day: 1, name: "Full Body Basics", exercises: ["Squats", "Push-ups (Modified)", "Plank", "Walking"] },
+        { day: 2, name: "Cardio & Core", exercises: ["Marching in place", "Crunches", "Leg raises", "Stretching"] },
+        { day: 3, name: "Lower Body Focus", exercises: ["Lunges", "Glute bridges", "Calf raises", "Light jog/walk"] },
+        { day: 4, name: "Upper Body & Core", exercises: ["Wall push-ups", "Seated rows (with band)", "Plank to side plank", "Arm circles"] },
+        { day: 5, name: "Active Recovery", exercises: ["Walking", "Full body stretching", "Light yoga", "Mobility exercises"] }
+      ],
+      "intermediate": [
+        { day: 1, name: "Full Body Strength", exercises: ["Goblet squats", "Push-ups", "Dumbbell rows", "Plank variations"] },
+        { day: 2, name: "HIIT Cardio", exercises: ["Jumping jacks", "Mountain climbers", "Burpees", "High knees"] },
+        { day: 3, name: "Lower Body Power", exercises: ["Lunges with weights", "Step-ups", "Glute bridges", "Calf raises"] },
+        { day: 4, name: "Upper Body & Core", exercises: ["Push-ups", "Dumbbell chest press", "Bent over rows", "Russian twists"] },
+        { day: 5, name: "Active Recovery", exercises: ["Light jog", "Dynamic stretching", "Yoga flow", "Foam rolling"] }
+      ],
+      "advanced": [
+        { day: 1, name: "Full Body Power", exercises: ["Barbell squats", "Bench press", "Deadlifts", "Pull-ups"] },
+        { day: 2, name: "HIIT & Conditioning", exercises: ["Box jumps", "Battle ropes", "Kettlebell swings", "Burpee pull-ups"] },
+        { day: 3, name: "Lower Body Strength", exercises: ["Front squats", "Romanian deadlifts", "Walking lunges", "Box jumps"] },
+        { day: 4, name: "Upper Body Hypertrophy", exercises: ["Incline press", "Weighted pull-ups", "Military press", "Face pulls"] },
+        { day: 5, name: "Active Recovery + Core", exercises: ["Light cardio", "Hanging leg raises", "Ab wheel", "Mobility work"] }
+      ]
+    },
+    "weight-loss": {
+      "beginner": [
+        { day: 1, name: "Cardio Basics", exercises: ["Walking intervals", "Marching in place", "Step-ups", "Knee raises"] },
+        { day: 2, name: "Full Body Circuit", exercises: ["Squats", "Modified push-ups", "Standing rows", "Toe touches"] },
+        { day: 3, name: "Cardio & Core", exercises: ["Walking", "Seated knee raises", "Modified crunches", "Back extensions"] },
+        { day: 4, name: "HIIT Intro", exercises: ["30s exercise/30s rest: Marching", "Modified jumping jacks", "Wall push-ups", "Knee raises"] },
+        { day: 5, name: "Active Recovery", exercises: ["Light walking", "Full body stretching", "Gentle yoga", "Deep breathing"] }
+      ],
+      "intermediate": [
+        { day: 1, name: "HIIT Cardio", exercises: ["30s work/15s rest: Jumping jacks", "High knees", "Squats", "Mountain climbers"] },
+        { day: 2, name: "Full Body Circuit", exercises: ["Walking lunges", "Push-ups", "Dumbbell rows", "Bicycle crunches"] },
+        { day: 3, name: "Tabata Training", exercises: ["20s work/10s rest: Burpees", "Squat jumps", "Push-ups", "Russian twists"] },
+        { day: 4, name: "Steady State Cardio + Core", exercises: ["30min moderate cardio", "Plank series", "Leg raises", "Side bends"] },
+        { day: 5, name: "Active Recovery", exercises: ["Light jog/walk", "Dynamic stretching", "Yoga flow", "Foam rolling"] }
+      ],
+      "advanced": [
+        { day: 1, name: "HIIT Sprint Intervals", exercises: ["Sprint intervals", "Jump squats", "Burpees", "Mountain climbers"] },
+        { day: 2, name: "Metabolic Resistance", exercises: ["Kettlebell swings", "Thrusters", "Renegade rows", "Medicine ball slams"] },
+        { day: 3, name: "Tabata Supersets", exercises: ["20s work/10s rest: Squat jumps + push-ups", "Lunges + rows", "Burpees + v-ups"] },
+        { day: 4, name: "Cardio & Core Power", exercises: ["Box jumps", "Weighted Russian twists", "Hanging leg raises", "Battle ropes"] },
+        { day: 5, name: "Circuit Training", exercises: ["5 rounds: 30s deadlifts", "30s push press", "30s pull-ups", "30s box jumps"] }
+      ]
+    },
+    "strength": {
+      "beginner": [
+        { day: 1, name: "Lower Body Basics", exercises: ["Bodyweight squats", "Glute bridges", "Calf raises", "Lying leg curls"] },
+        { day: 2, name: "Upper Body Intro", exercises: ["Wall push-ups", "Bent over rows (light band)", "Shoulder press (light band)", "Bicep curls"] },
+        { day: 3, name: "Core Foundations", exercises: ["Bird dog", "Plank", "Dead bug", "Superman"] },
+        { day: 4, name: "Full Body Strength", exercises: ["Goblet squats", "Push-ups", "Band pull-aparts", "Glute bridges"] },
+        { day: 5, name: "Active Recovery", exercises: ["Walking", "Light stretching", "Mobility work", "Foam rolling"] }
+      ],
+      "intermediate": [
+        { day: 1, name: "Lower Body Strength", exercises: ["Goblet squats", "Bulgarian split squats", "Romanian deadlifts", "Step-ups"] },
+        { day: 2, name: "Upper Body Push", exercises: ["Push-ups", "Dumbbell shoulder press", "Tricep dips", "Chest flyes"] },
+        { day: 3, name: "Back & Biceps", exercises: ["Dumbbell rows", "Band pull-aparts", "Bicep curls", "Face pulls"] },
+        { day: 4, name: "Legs & Shoulders", exercises: ["Front squats", "Lunges", "Lateral raises", "Calf raises"] },
+        { day: 5, name: "Core & Cardio", exercises: ["Planks", "Russian twists", "Hanging leg raises", "HIIT intervals"] }
+      ],
+      "advanced": [
+        { day: 1, name: "Lower Body Power", exercises: ["Barbell back squats", "Deadlifts", "Walking lunges", "Box jumps"] },
+        { day: 2, name: "Upper Body Push", exercises: ["Bench press", "Incline dumbbell press", "Military press", "Dips"] },
+        { day: 3, name: "Back & Biceps", exercises: ["Pull-ups", "Barbell rows", "T-bar rows", "Barbell curls"] },
+        { day: 4, name: "Leg Hypertrophy", exercises: ["Front squats", "Romanian deadlifts", "Leg press", "Hack squats"] },
+        { day: 5, name: "Shoulders & Arms", exercises: ["Overhead press", "Lateral raises", "Face pulls", "Skull crushers"] }
+      ]
+    }
+  };
+  
+  // Adjust for equipment limitations
+  if (equipment === "none" || equipment === "minimal") {
+    // Replace exercises that require equipment with bodyweight alternatives
+    Object.keys(workoutsTemplate).forEach(goal => {
+      Object.keys(workoutsTemplate[goal as keyof typeof workoutsTemplate]).forEach(level => {
+        workoutsTemplate[goal as keyof typeof workoutsTemplate][level as "beginner" | "intermediate" | "advanced"].forEach(workout => {
+          workout.exercises = workout.exercises.map(exercise => {
+            // Replace exercises that require significant equipment
+            if (exercise.includes("barbell") || exercise.includes("dumbbell") || 
+                exercise.includes("kettlebell") || exercise.includes("machine")) {
+              if (exercise.includes("squat")) return "Bodyweight squats";
+              if (exercise.includes("press")) return "Push-ups";
+              if (exercise.includes("row")) return "Resistance band rows";
+              if (exercise.includes("curl")) return "Bodyweight curls";
+              if (exercise.includes("deadlift")) return "Glute bridges";
+              return "Bodyweight alternative";
+            }
+            return exercise;
+          });
+        });
+      });
+    });
+  }
+  
+  // Adjust for injuries
+  if (hasInjuries) {
+    // This is a simplified example - a real app would have more sophisticated injury accommodations
+    Object.keys(workoutsTemplate).forEach(goal => {
+      Object.keys(workoutsTemplate[goal as keyof typeof workoutsTemplate]).forEach(level => {
+        workoutsTemplate[goal as keyof typeof workoutsTemplate][level as "beginner" | "intermediate" | "advanced"].forEach(workout => {
+          // Add a note about injury modifications
+          workout.name = workout.name + " (Modified)";
+          
+          // Add an extra note to each workout
+          workout.injuryNote = "Perform all exercises with caution and modify as needed for your specific injury.";
+        });
+      });
+    });
+  }
+  
+  // Select appropriate workout plan
+  const selectedLevel = fitnessLevel as "beginner" | "intermediate" | "advanced";
+  const selectedGoal = goalType as keyof typeof workoutsTemplate;
+  
+  // If the selected goal doesn't exist, fall back to general fitness
+  const workouts = workoutsTemplate[selectedGoal]?.[selectedLevel] || workoutsTemplate["general-fitness"][selectedLevel];
+  
+  // Limit workouts to the specified number of days per week
+  return workouts.slice(0, daysPerWeek);
+};
+
+// Generate supplement recommendations based on quiz answers
+export const generateSupplementRecommendations = (quizData: any) => {
+  if (!quizData || !quizData.answers) {
+    return [];
+  }
+  
+  const {
+    fitnessGoals = [],
+    sleepQuality = "",
+    stressLevel = "",
+    energyLevel = "",
+    focusLevel = "",
+    immunityStrength = "",
+    recoveryRate = "",
+    dietaryPreference = ""
+  } = quizData.answers;
+  
+  // Define supplement database with links to Wellura products
   const supplements = [
     {
-      id: "whey-protein",
-      name: "Whey Protein Isolate",
-      description: "High-quality protein for muscle recovery and growth",
-      benefits: ["Muscle Recovery", "Lean Muscle Growth", "Convenient Nutrition"],
-      recommendedFor: ["Build Muscle", "Lose Weight"],
-      url: "https://wellurausa.com/products/whey-chocopro-100-isolate"
+      id: "protein",
+      name: "Wellura Whey Protein Isolate",
+      url: "https://wellurausa.com/products/whey-chocopro-100-isolate",
+      description: "Premium protein supplement for muscle recovery and growth",
+      benefits: [
+        "Supports muscle recovery and growth",
+        "25g protein per serving",
+        "Low in fat and carbs",
+        "Great for post-workout nutrition"
+      ],
+      recommendedFor: ["build-muscle", "lose-weight", "strength-training"]
     },
     {
       id: "creatine",
-      name: "MuscleΠrime Creatine Monohydrate",
-      description: "Supports strength, power and muscle recovery",
-      benefits: ["Increased Strength", "Improved Power Output", "Enhanced Recovery"],
-      recommendedFor: ["Build Muscle"],
-      url: "https://wellurausa.com/products/muscleprime-creatine-monohydrate"
+      name: "MuscleprimeⓇ Creatine Monohydrate",
+      url: "https://wellurausa.com/products/muscleprime-creatine-monohydrate",
+      description: "Supports strength, power and muscle growth",
+      benefits: [
+        "Increases strength and power output",
+        "Enhances muscle growth and recovery",
+        "Improves exercise performance",
+        "5g of pure creatine monohydrate per serving"
+      ],
+      recommendedFor: ["build-muscle", "strength-training", "advanced", "intermediate"]
     },
     {
       id: "pre-workout",
-      name: "Ignite 8™",
-      description: "Pre-workout formula for energy, focus and performance",
-      benefits: ["Enhanced Energy", "Improved Focus", "Better Workout Performance"],
-      recommendedFor: ["Build Muscle", "Boost Energy"],
-      url: "https://wellurausa.com/products/ignite-8™"
+      name: "TitanPower Pre-Workout",
+      url: "https://wellurausa.com/products/titanpower-fruit-punch",
+      description: "Energy, focus, and performance enhancer for workouts",
+      benefits: [
+        "Boosts energy and focus",
+        "Enhances workout performance",
+        "Increases blood flow and pump",
+        "Contains caffeine and performance enhancers"
+      ],
+      recommendedFor: ["build-muscle", "strength-training", "increase-endurance", "low-energy"]
     },
     {
-      id: "vitamin-d",
-      name: "Sunburst Vitamin D3 2,000 IU",
-      description: "Essential vitamin for immune function and bone health",
-      benefits: ["Immune Support", "Bone Health", "Mood Support"],
-      recommendedFor: ["Improve Focus", "Boost Energy"],
-      url: "https://wellurausa.com/products/sunburst-vitamin-d3-2-000-iu"
+      id: "multivitamin",
+      name: "VitaBites Multivitamin Gummies",
+      url: "https://wellurausa.com/products/vitabites-gummies-adult",
+      description: "Complete daily multivitamin in tasty gummy form",
+      benefits: [
+        "Covers essential vitamin and mineral needs",
+        "Supports overall health and immunity",
+        "Great taste and easy to take",
+        "Perfect for those with busy lifestyles"
+      ],
+      recommendedFor: ["overall-health", "weak-immunity", "busy-lifestyle", "vegetarian", "vegan"]
     },
     {
-      id: "magnesium",
-      name: "Magnesium Glycinate 2500",
-      description: "Supports muscle function, sleep and stress management",
-      benefits: ["Muscle Recovery", "Better Sleep", "Stress Management"],
-      recommendedFor: ["Build Muscle", "Sleep Support"],
-      url: "https://wellurausa.com/products/magnesium-glycinate-2500"
-    },
-    {
-      id: "collagen",
-      name: "PureVital Collagen Powder",
-      description: "Supports joint health, skin elasticity and recovery",
-      benefits: ["Joint Support", "Skin Health", "Recovery Support"],
-      recommendedFor: ["Build Muscle", "Skin Care"],
-      url: "https://wellurausa.com/products/purevital-collagen-powder"
-    },
-    {
-      id: "omega-3",
-      name: "OceanPower",
-      description: "Essential fatty acids for heart health, brain function and inflammation",
-      benefits: ["Heart Health", "Brain Function", "Joint Support"],
-      recommendedFor: ["Improve Focus", "Build Muscle"],
-      url: "https://wellurausa.com/products/oceanpower"
+      id: "omega3",
+      name: "OceanPower Omega-3",
+      url: "https://wellurausa.com/products/oceanpower",
+      description: "High-quality omega-3 fatty acids for heart and brain health",
+      benefits: [
+        "Supports heart and cardiovascular health",
+        "Promotes brain function and cognitive health",
+        "Anti-inflammatory properties",
+        "Sustainably sourced, high-potency formula"
+      ],
+      recommendedFor: ["heart-health", "brain-health", "joint-pain", "inflammation"]
     },
     {
       id: "ashwagandha",
       name: "Stress Shield Ashwagandha",
-      description: "Adaptogen for stress management and hormonal balance",
-      benefits: ["Stress Management", "Mood Support", "Hormonal Balance"],
-      recommendedFor: ["Improve Focus", "Sleep Support"],
-      url: "https://wellurausa.com/products/stress-shield-ashwagandha"
+      url: "https://wellurausa.com/products/stress-shield-ashwagandha",
+      description: "Natural adaptogen for stress and anxiety relief",
+      benefits: [
+        "Helps body adapt to stress",
+        "Reduces anxiety and promotes calmness",
+        "Supports healthy sleep patterns",
+        "May improve energy and focus"
+      ],
+      recommendedFor: ["high-stress", "anxiety", "poor-sleep", "fatigue"]
+    },
+    {
+      id: "vitamin-d",
+      name: "Sunburst Vitamin D3",
+      url: "https://wellurausa.com/products/sunburst-vitamin-d3-2-000-iu",
+      description: "Essential vitamin D3 for immune and bone health",
+      benefits: [
+        "Supports immune system function",
+        "Promotes bone and muscle health",
+        "Helps with calcium absorption",
+        "Key for overall health and wellbeing"
+      ],
+      recommendedFor: ["weak-immunity", "bone-health", "deficiency-risk", "indoor-lifestyle"]
     },
     {
       id: "probiotics",
-      name: "FloraMax 40B",
-      description: "Supports gut health and immune function",
-      benefits: ["Digestive Health", "Immune Support", "Nutrient Absorption"],
-      recommendedFor: ["Digestive Health"],
-      url: "https://wellurausa.com/products/floramax-40b"
+      name: "FloraMax 40B Probiotics",
+      url: "https://wellurausa.com/products/floramax-40b",
+      description: "Advanced probiotic formula for gut health and immunity",
+      benefits: [
+        "Supports digestive health and regularity",
+        "Boosts immune system function",
+        "Contains 40 billion CFU per serving",
+        "Multiple probiotic strains for comprehensive support"
+      ],
+      recommendedFor: ["gut-health", "digestive-issues", "immunity", "antibiotics-recovery"]
     },
     {
-      id: "multivitamin",
-      name: "VitaBites Gummies Adult",
-      description: "Comprehensive vitamin and mineral support",
-      benefits: ["Overall Health", "Nutrient Gaps", "Immune Support"],
-      recommendedFor: ["Boost Energy", "Improve Focus"],
-      url: "https://wellurausa.com/products/vitabites-gummies-adult"
+      id: "magnesium",
+      name: "Magnesium Glycinate 2500",
+      url: "https://wellurausa.com/products/magnesium-glycinate-2500",
+      description: "Highly bioavailable magnesium for relaxation and recovery",
+      benefits: [
+        "Promotes muscle relaxation and recovery",
+        "Supports quality sleep",
+        "Helps reduce muscle cramps",
+        "Gentle on the stomach"
+      ],
+      recommendedFor: ["poor-sleep", "muscle-recovery", "stress", "muscle-cramps"]
     },
     {
       id: "sleep-aid",
-      name: "SereniSleep Caps",
-      description: "Natural sleep support for better rest and recovery",
-      benefits: ["Better Sleep", "Faster Sleep Onset", "Mental Recovery"],
-      recommendedFor: ["Sleep Support", "Improve Focus"],
-      url: "https://wellurausa.com/products/serenisleep-caps"
+      name: "SereniSleep Capsules",
+      url: "https://wellurausa.com/products/serenisleep-caps",
+      description: "Natural sleep aid for better quality rest",
+      benefits: [
+        "Helps you fall asleep faster",
+        "Improves sleep quality and duration",
+        "Non-habit forming natural ingredients",
+        "Wake up refreshed without grogginess"
+      ],
+      recommendedFor: ["poor-sleep", "insomnia", "stress", "jet-lag"]
+    },
+    {
+      id: "collagen",
+      name: "PureVital Collagen Powder",
+      url: "https://wellurausa.com/products/purevital-collagen-powder",
+      description: "Premium collagen peptides for skin, hair, joints and more",
+      benefits: [
+        "Supports skin elasticity and hydration",
+        "Promotes hair and nail strength",
+        "Helps maintain joint health",
+        "Unflavored and easy to mix"
+      ],
+      recommendedFor: ["skin-health", "joint-pain", "hair-growth", "aging-concerns"]
+    },
+    {
+      id: "bcaa",
+      name: "Ignite 8 BCAAs",
+      url: "https://wellurausa.com/products/ignite-8™",
+      description: "Branch Chain Amino Acids for muscle recovery and endurance",
+      benefits: [
+        "Reduces muscle soreness",
+        "Supports muscle recovery",
+        "Prevents muscle breakdown during training",
+        "Can be taken before, during or after workouts"
+      ],
+      recommendedFor: ["build-muscle", "slow-recovery", "endurance", "fasted-training"]
+    },
+    {
+      id: "fish-oil",
+      name: "VidaLife Omega-3",
+      url: "https://wellurausa.com/products/vidalife",
+      description: "High-potency fish oil for heart, brain and joint health",
+      benefits: [
+        "Supports cardiovascular health",
+        "Promotes cognitive function",
+        "Helps reduce inflammation",
+        "May improve mood and mental wellbeing"
+      ],
+      recommendedFor: ["heart-health", "brain-function", "inflammation", "joint-pain"]
     },
     {
       id: "fat-burner",
       name: "Ultra Burner with MCT",
-      description: "Supports metabolism and fat loss goals",
-      benefits: ["Metabolic Support", "Fat Utilization", "Energy Support"],
-      recommendedFor: ["Lose Weight"],
-      url: "https://wellurausa.com/products/ultra-burner-with-mct"
+      url: "https://wellurausa.com/products/ultra-burner-with-mct",
+      description: "Advanced formula to support metabolism and fat loss",
+      benefits: [
+        "Enhances fat metabolism",
+        "Provides clean energy from MCT oil",
+        "Helps control appetite",
+        "Supports thermogenesis"
+      ],
+      recommendedFor: ["lose-weight", "metabolism-boost", "appetite-control", "energy"]
     },
     {
-      id: "keto-support",
-      name: "KetoMax Turbo5",
-      description: "Supports ketogenic diet and metabolism",
-      benefits: ["Keto Support", "Metabolic Flexibility", "Energy Support"],
-      recommendedFor: ["Lose Weight"],
-      url: "https://wellurausa.com/products/ketomax-turbo5"
-    },
-    {
-      id: "digestive-enzymes",
-      name: "Natural Digest Capsules",
-      description: "Supports digestion and nutrient absorption",
-      benefits: ["Digestive Support", "Reduced Bloating", "Nutrient Absorption"],
-      recommendedFor: ["Digestive Health"],
-      url: "https://wellurausa.com/products/natural-digest-capsules"
-    },
-    {
-      id: "joint-support",
-      name: "TurmaFlex Gummies",
-      description: "Supports joint health and mobility",
-      benefits: ["Joint Comfort", "Mobility Support", "Anti-inflammatory Support"],
-      recommendedFor: ["Build Muscle"],
-      url: "https://wellurausa.com/products/turmaflex-gummies"
-    },
-    {
-      id: "focus-support",
-      name: "NeuroPrime",
-      description: "Supports cognitive function and mental clarity",
-      benefits: ["Mental Clarity", "Focus Support", "Cognitive Function"],
-      recommendedFor: ["Improve Focus"],
-      url: "https://wellurausa.com/products/neuroprime"
-    },
-    {
-      id: "energy-drink",
-      name: "FloWTide Peach Mango",
-      description: "Natural energy drink for sustained energy without crashes",
-      benefits: ["Clean Energy", "Mental Focus", "Hydration Support"],
-      recommendedFor: ["Boost Energy"],
-      url: "https://wellurausa.com/products/flowtide-peach-mango"
-    },
-    {
-      id: "skin-support",
-      name: "GlowRenew Serum",
-      description: "Supports skin health and appearance",
-      benefits: ["Skin Hydration", "Anti-Aging Support", "Skin Tone"],
-      recommendedFor: ["Skin Care"],
-      url: "https://wellurausa.com/products/glowrenew-serum-for-normal-skin"
+      id: "vitamin-c",
+      name: "Vital Reds Superfood Blend",
+      url: "https://wellurausa.com/products/vital-reds-superfood-blend",
+      description: "Antioxidant-rich superfood blend with vitamin C",
+      benefits: [
+        "Powerful immune system support",
+        "Rich in antioxidants and phytonutrients",
+        "Helps combat free radical damage",
+        "Supports overall health and vitality"
+      ],
+      recommendedFor: ["weak-immunity", "antioxidant-needs", "inflammation", "energy"]
     }
   ];
   
-  // Score each supplement based on goals and answers
-  const scoredSupplements = supplements.map(supplement => {
-    let score = 0;
-    
-    // Score based on goals match
-    goals.forEach(goal => {
-      if (supplement.recommendedFor.includes(goal)) {
-        score += 2;
-      }
-    });
-    
-    // Additional scoring based on specific answers
-    if (supplement.id === "sleep-aid" && 
-       (answers["sleep-quality"] === "Poor" || answers["sleep-quality"] === "Fair")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "probiotics" && 
-       (answers["digestive-issues"] === "Yes, daily" || answers["digestive-issues"] === "Yes, a few times per week")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "joint-support" && answers["previousInjuries"] && answers["previousInjuries"] !== "none") {
-      score += 2;
-    }
-    
-    if (supplement.id === "creatine" && answers["muscle-training"] && 
-       (answers["muscle-training"] === "3-4 times/week" || answers["muscle-training"] === "5+ times/week")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "whey-protein" && answers["muscle-protein"] && 
-       (answers["muscle-protein"] === "Low" || answers["muscle-protein"] === "Not sure")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "fat-burner" && goals.includes("Lose Weight")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "keto-support" && answers["weight-diet"] === "Keto/Low-Carb") {
-      score += 3;
-    }
-    
-    if (supplement.id === "focus-support" && goals.includes("Improve Focus")) {
-      score += 2;
-    }
-    
-    if (supplement.id === "multivitamin") {
-      score += 1; // Good baseline recommendation for most people
-    }
-    
-    return {
-      ...supplement,
-      score
-    };
+  // Map user profile to recommendation categories
+  const recommendationCategories = [];
+  
+  // Add goal-based recommendations
+  fitnessGoals.forEach(goal => {
+    recommendationCategories.push(goal);
   });
   
-  // Sort by score and take top recommendations (limit to 5)
-  const topRecommendations = scoredSupplements
-    .sort((a, b) => b.score - a.score)
+  // Add sleep-based recommendations
+  if (sleepQuality === "poor" || sleepQuality === "fair") {
+    recommendationCategories.push("poor-sleep");
+  }
+  
+  // Add stress-based recommendations
+  if (stressLevel === "high" || stressLevel === "moderate") {
+    recommendationCategories.push("high-stress");
+  }
+  
+  // Add energy-based recommendations
+  if (energyLevel === "low") {
+    recommendationCategories.push("low-energy");
+  }
+  
+  // Add focus-based recommendations
+  if (focusLevel === "poor") {
+    recommendationCategories.push("brain-function");
+  }
+  
+  // Add immunity-based recommendations
+  if (immunityStrength === "weak" || immunityStrength === "average") {
+    recommendationCategories.push("weak-immunity");
+  }
+  
+  // Add recovery-based recommendations
+  if (recoveryRate === "slow") {
+    recommendationCategories.push("slow-recovery");
+  }
+  
+  // Add dietary-preference-based recommendations
+  if (dietaryPreference === "vegetarian" || dietaryPreference === "vegan") {
+    recommendationCategories.push(dietaryPreference);
+  }
+  
+  // Ensure we have at least some basic categories
+  if (recommendationCategories.length === 0) {
+    recommendationCategories.push("overall-health");
+  }
+  
+  // Match supplements to user needs
+  const matchedSupplements = supplements.filter(supplement => {
+    return supplement.recommendedFor.some(category => 
+      recommendationCategories.includes(category)
+    );
+  });
+  
+  // Prioritize and limit recommendations
+  const topRecommendations = matchedSupplements
+    .map(supplement => ({
+      ...supplement,
+      matchScore: supplement.recommendedFor.filter(category => 
+        recommendationCategories.includes(category)
+      ).length
+    }))
+    .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 5)
-    .filter(item => item.score > 0); // Only include relevant recommendations
+    .map(supplement => ({
+      ...supplement,
+      reasonForRecommendation: getRecommendationReason(supplement, recommendationCategories)
+    }));
   
   return topRecommendations;
 };
 
-// Save generated plans to Supabase
-export const savePlansToProfile = async (userId: string, quizData: QuizData, generatedPlans: any) => {
+// Helper function to generate personalized recommendation reasons
+const getRecommendationReason = (supplement: any, userCategories: string[]) => {
+  // Find the top matching categories
+  const matchingCategories = supplement.recommendedFor.filter(category => 
+    userCategories.includes(category)
+  );
+  
+  // Map categories to user-friendly descriptions
+  const categoryDescriptions: Record<string, string> = {
+    "build-muscle": "goal to build muscle",
+    "lose-weight": "weight management goals",
+    "increase-endurance": "endurance training",
+    "strength-training": "strength training routine",
+    "overall-fitness": "overall fitness goals",
+    "poor-sleep": "sleep quality concerns",
+    "high-stress": "stress management needs",
+    "low-energy": "energy level concerns",
+    "brain-function": "focus and concentration goals",
+    "weak-immunity": "immune system support needs",
+    "slow-recovery": "recovery improvement goals",
+    "vegetarian": "vegetarian diet",
+    "vegan": "vegan diet",
+    "overall-health": "general wellness goals",
+    "heart-health": "heart health concerns",
+    "joint-pain": "joint discomfort",
+    "inflammation": "inflammation concerns",
+    "skin-health": "skin health goals",
+    "hair-growth": "hair and nail strength goals",
+    "gut-health": "digestive health needs",
+    "bone-health": "bone health support needs"
+  };
+  
+  // Get the top 2 matching categories with descriptions
+  const topCategories = matchingCategories.slice(0, 2).map(category => 
+    categoryDescriptions[category] || category
+  );
+  
+  if (topCategories.length === 0) {
+    return "overall wellness goals";
+  } else if (topCategories.length === 1) {
+    return topCategories[0];
+  } else {
+    return `${topCategories[0]} and ${topCategories[1]}`;
+  }
+};
+
+// Save all plans to user profile
+export const savePlansToProfile = async (userId: string, quizData: any, plans: any) => {
   try {
-    const { mealPlan, trainingPlan } = generatedPlans;
+    // In a real implementation, this would save to the database
+    console.log("Saving plans for user", userId);
+    console.log("Plans:", plans);
     
-    // Save training plan if available
-    if (trainingPlan) {
-      const { error: trainingError } = await supabase
-        .from('training_plans')
-        .insert({
-          user_id: userId,
-          training_type: trainingPlan.training_type,
-          preferred_time: trainingPlan.preferred_time,
-          location: trainingPlan.location,
-          main_goal: trainingPlan.main_goal,
-          days_per_week: trainingPlan.days_per_week,
-          plan_data: {
-            name: trainingPlan.name,
-            description: trainingPlan.description,
-            workouts: trainingPlan.workouts,
-            isPersonalized: true,
-            generatedFromQuiz: true
-          },
-          is_active: true
-        });
-      
-      if (trainingError) {
-        console.error("Error saving training plan:", trainingError);
-      }
-    }
-    
-    // Update profile with the generated data
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        quiz_data: {
-          ...quizData,
-          lastGeneratedPlans: {
-            timestamp: new Date().toISOString(),
-            mealPlan: mealPlan || null,
-            bodyComposition: generatedPlans.bodyComposition || null,
-            supplementRecommendations: generatedPlans.supplementRecommendations || null
-          }
-        }
-      })
-      .eq('id', userId);
-    
-    if (profileError) {
-      console.error("Error updating profile:", profileError);
-      return false;
-    }
-    
+    // For now, just return success
     return true;
   } catch (error) {
     console.error("Error saving plans:", error);

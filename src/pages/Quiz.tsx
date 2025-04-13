@@ -6,14 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Check, Printer, Mail, ArrowRight, ArrowLeft, RefreshCw } from "lucide-react";
-import { getQuizQuestions, getRecommendations, healthGoals } from "@/utils/quizUtils";
+import { 
+  FileText, 
+  RefreshCw, 
+  ArrowRight, 
+  Dumbbell,
+  Loader2
+} from "lucide-react";
+import FitnessQuiz from "@/components/training/FitnessQuiz";
 import { 
   calculateBodyComposition, 
   generateMealPlan, 
@@ -26,13 +27,9 @@ const Quiz = () => {
   const { userId, userProfile, setUserProfile } = useContext(UserContext);
   const navigate = useNavigate();
   
-  const [quizStep, setQuizStep] = useState<number>(0);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, any>>({});
-  const [currentGoalIndex, setCurrentGoalIndex] = useState<number>(0);
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [showQuiz, setShowQuiz] = useState<boolean>(false);
   const [hasCompletedQuiz, setHasCompletedQuiz] = useState<boolean>(false);
-  const [recommendations, setRecommendations] = useState<Record<string, string[]>>({});
+  const [lastCompletedDate, setLastCompletedDate] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isGeneratingPlans, setIsGeneratingPlans] = useState<boolean>(false);
 
@@ -40,98 +37,22 @@ const Quiz = () => {
   useEffect(() => {
     if (userProfile?.quiz_data) {
       setHasCompletedQuiz(true);
-      setSelectedGoals(userProfile.quiz_data.goals || []);
-      setQuizAnswers(userProfile.quiz_data.answers || {});
+      if (userProfile.quiz_data.completedAt) {
+        setLastCompletedDate(new Date(userProfile.quiz_data.completedAt).toLocaleDateString());
+      }
     }
   }, [userProfile]);
 
-  // Load questions when goals are selected
-  useEffect(() => {
-    if (selectedGoals.length > 0 && quizStep === 1) {
-      const allQuestions = getQuizQuestions(selectedGoals);
-      setQuestions(allQuestions);
-    }
-  }, [selectedGoals, quizStep]);
-
-  // Generate recommendations when quiz is completed
-  useEffect(() => {
-    if (quizStep === 2 && Object.keys(quizAnswers).length > 0) {
-      const recs = getRecommendations(selectedGoals, quizAnswers);
-      setRecommendations(recs);
-    }
-  }, [quizStep, quizAnswers, selectedGoals]);
-
-  const handleGoalToggle = (goal: string) => {
-    setSelectedGoals(prev => {
-      if (prev.includes(goal)) {
-        return prev.filter(g => g !== goal);
-      } else {
-        // Limit to 3 selections
-        if (prev.length >= 3) {
-          toast({
-            title: "Maximum Goals Reached",
-            description: "You can select up to 3 health goals",
-          });
-          return prev;
-        }
-        return [...prev, goal];
-      }
-    });
+  const handleStartQuiz = () => {
+    setShowQuiz(true);
   };
 
-  const handleAnswerChange = (questionId: string, answer: any) => {
-    setQuizAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
+  const handleCancelQuiz = () => {
+    setShowQuiz(false);
   };
 
-  const handleNextStep = () => {
-    if (quizStep === 0) {
-      if (selectedGoals.length === 0) {
-        toast({
-          title: "Please Select a Goal",
-          description: "Please select at least one health goal",
-          variant: "destructive",
-        });
-        return;
-      }
-      setQuizStep(1);
-    } else if (quizStep === 1) {
-      // Check if all questions for the current goal are answered
-      const currentGoalQuestions = questions.filter(q => q.goal === selectedGoals[currentGoalIndex]);
-      const allAnswered = currentGoalQuestions.every(q => quizAnswers[q.id] !== undefined);
-      
-      if (!allAnswered) {
-        toast({
-          title: "Please Complete This Step",
-          description: "Please answer all questions before proceeding",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // If there are more goals to answer questions for
-      if (currentGoalIndex < selectedGoals.length - 1) {
-        setCurrentGoalIndex(prev => prev + 1);
-      } else {
-        setQuizStep(2);
-      }
-    }
-  };
-
-  const handlePreviousStep = () => {
-    if (quizStep === 1 && currentGoalIndex > 0) {
-      setCurrentGoalIndex(prev => prev - 1);
-    } else if (quizStep === 1 && currentGoalIndex === 0) {
-      setQuizStep(0);
-    } else if (quizStep === 2) {
-      setQuizStep(1);
-      setCurrentGoalIndex(selectedGoals.length - 1);
-    }
-  };
-
-  const saveQuizData = async () => {
+  const handleQuizComplete = async (quizResults: any) => {
+    setShowQuiz(false);
     setIsSubmitting(true);
     
     try {
@@ -146,8 +67,8 @@ const Quiz = () => {
       }
       
       const quizData = {
-        goals: selectedGoals,
-        answers: quizAnswers,
+        answers: quizResults,
+        goals: quizResults.fitnessGoals,
         completedAt: new Date().toISOString(),
       };
       
@@ -176,6 +97,7 @@ const Quiz = () => {
         description: "Your wellness quiz results have been saved!",
       });
       setHasCompletedQuiz(true);
+      setLastCompletedDate(new Date().toLocaleDateString());
       
       // Generate plans after saving quiz data
       generatePlans(quizData);
@@ -196,14 +118,14 @@ const Quiz = () => {
     setIsGeneratingPlans(true);
     
     try {
+      // Generate body composition
+      const bodyComposition = calculateBodyComposition(quizData);
+      
       // Generate meal plan
-      const mealPlan = generateMealPlan(quizData, userProfile);
+      const mealPlan = generateMealPlan(quizData, userProfile, bodyComposition);
       
       // Generate training plan
       const trainingPlan = generateTrainingPlan(quizData, userProfile);
-      
-      // Calculate body composition
-      const bodyComposition = calculateBodyComposition(quizData);
       
       // Generate supplement recommendations
       const supplementRecommendations = generateSupplementRecommendations(quizData);
@@ -239,307 +161,8 @@ const Quiz = () => {
     }
   };
 
-  const resetQuiz = () => {
-    setQuizStep(0);
-    setSelectedGoals([]);
-    setQuizAnswers({});
-    setCurrentGoalIndex(0);
-    setHasCompletedQuiz(false);
-  };
-
-  const printReport = () => {
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) {
-      toast({
-        title: "Pop-up Blocked",
-        description: "Please allow pop-ups to print the report.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    let reportContent = `
-      <html>
-      <head>
-        <title>Wellness Report</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #3f51b5; }
-          h2 { color: #536dfe; margin-top: 20px; }
-          .goal { margin-bottom: 30px; }
-          .recommendation { margin: 5px 0; }
-        </style>
-      </head>
-      <body>
-        <h1>Your Personalized Wellness Report</h1>
-        <p>Based on your responses, we've created this custom wellness plan for you.</p>
-    `;
-    
-    selectedGoals.forEach(goal => {
-      reportContent += `
-        <div class="goal">
-          <h2>Your ${goal} Plan</h2>
-          <h3>Recommendations:</h3>
-          <ul>
-      `;
-      
-      if (recommendations[goal]) {
-        recommendations[goal].forEach(rec => {
-          reportContent += `<li class="recommendation">${rec}</li>`;
-        });
-      }
-      
-      reportContent += `</ul></div>`;
-    });
-    
-    reportContent += `</body></html>`;
-    
-    reportWindow.document.open();
-    reportWindow.document.write(reportContent);
-    reportWindow.document.close();
-    
-    setTimeout(() => {
-      reportWindow.print();
-    }, 500);
-  };
-
-  const sendEmailReport = () => {
-    // In a real implementation, this would send an email with the report
-    toast({
-      title: "Coming Soon",
-      description: "Email feature will be implemented in the next version",
-    });
-  };
-
-  const renderCurrentStep = () => {
-    // Already completed quiz view
-    if (hasCompletedQuiz && quizStep === 0) {
-      return (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Your Wellness Profile</CardTitle>
-            <CardDescription>
-              You've already completed the wellness quiz
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Your Health Goals:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {selectedGoals.map(goal => (
-                  <div key={goal} className="flex items-center space-x-2 bg-secondary/50 p-3 rounded-md">
-                    <Check className="h-5 w-5 text-primary" />
-                    <span>{goal}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Your Wellness Report:</h3>
-                {selectedGoals.map(goal => (
-                  <div key={goal} className="mb-4">
-                    <h4 className="font-medium text-primary">{goal}</h4>
-                    <ul className="list-disc pl-5 space-y-1 mt-2">
-                      {recommendations[goal]?.map((rec, index) => (
-                        <li key={index}>{rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex-col space-y-3">
-            <div className="flex flex-wrap gap-3 w-full">
-              <Button variant="outline" onClick={() => navigate("/quiz-results")} className="flex-1">
-                View Detailed Results
-              </Button>
-              <Button variant="outline" onClick={printReport} className="flex-1">
-                <Printer className="mr-2 h-4 w-4" />
-                Print Report
-              </Button>
-              <Button variant="outline" onClick={sendEmailReport} className="flex-1">
-                <Mail className="mr-2 h-4 w-4" />
-                Email Report
-              </Button>
-            </div>
-            <Button onClick={resetQuiz} className="w-full">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Retake Quiz
-            </Button>
-          </CardFooter>
-        </Card>
-      );
-    }
-
-    // Step 0: Goal selection
-    if (quizStep === 0) {
-      return (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Wellness Quiz</CardTitle>
-            <CardDescription>
-              What are your main health goals? Select up to 3
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {healthGoals.map((goal) => (
-                <div
-                  key={goal.id}
-                  className={`flex items-center space-x-2 border rounded-md p-3 hover:bg-secondary/50 cursor-pointer ${
-                    selectedGoals.includes(goal.id) ? "bg-secondary border-primary" : ""
-                  }`}
-                  onClick={() => handleGoalToggle(goal.id)}
-                >
-                  <Checkbox
-                    id={`goal-${goal.id}`}
-                    checked={selectedGoals.includes(goal.id)}
-                    onCheckedChange={() => handleGoalToggle(goal.id)}
-                  />
-                  <Label htmlFor={`goal-${goal.id}`} className="cursor-pointer">
-                    {goal.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="justify-between">
-            <div></div>
-            <Button onClick={handleNextStep} disabled={selectedGoals.length === 0}>
-              Continue
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-      );
-    }
-
-    // Step 1: Questions based on selected goals
-    if (quizStep === 1) {
-      const currentGoal = selectedGoals[currentGoalIndex];
-      const currentGoalQuestions = questions.filter(q => q.goal === currentGoal);
-      
-      return (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Questions about {currentGoal}</CardTitle>
-            <CardDescription>
-              Goal {currentGoalIndex + 1} of {selectedGoals.length}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {currentGoalQuestions.map((question) => (
-                <div key={question.id} className="space-y-3">
-                  <h3 className="text-lg font-medium">{question.text}</h3>
-                  
-                  {question.type === 'radio' && (
-                    <RadioGroup
-                      value={quizAnswers[question.id] || ""}
-                      onValueChange={(value) => handleAnswerChange(question.id, value)}
-                      className="space-y-2"
-                    >
-                      {question.options.map((option: string) => (
-                        <div key={option} className="flex items-center space-x-2">
-                          <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                          <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  )}
-                  
-                  {question.type === 'text' && (
-                    <Input
-                      value={quizAnswers[question.id] || ""}
-                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                      placeholder="Your answer"
-                    />
-                  )}
-                  
-                  {question.type === 'textarea' && (
-                    <Textarea
-                      value={quizAnswers[question.id] || ""}
-                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                      placeholder="Your answer"
-                      className="min-h-[80px]"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="justify-between">
-            <Button variant="outline" onClick={handlePreviousStep}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button onClick={handleNextStep}>
-              {currentGoalIndex < selectedGoals.length - 1 ? (
-                <>Next Goal<ArrowRight className="ml-2 h-4 w-4" /></>
-              ) : (
-                <>Complete Quiz<Check className="ml-2 h-4 w-4" /></>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-      );
-    }
-
-    // Step 2: Results and recommendations
-    if (quizStep === 2) {
-      return (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Your Wellness Report</CardTitle>
-            <CardDescription>
-              Based on your responses, we've created a personalized wellness plan
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {selectedGoals.map(goal => (
-                <div key={goal} className="space-y-3">
-                  <h3 className="text-lg font-medium text-primary">{goal} Recommendations</h3>
-                  <div className="bg-secondary/30 p-4 rounded-md">
-                    <ul className="list-disc pl-5 space-y-2">
-                      {recommendations[goal]?.map((rec, index) => (
-                        <li key={index}>{rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="flex-col space-y-3">
-            <div className="flex flex-wrap gap-3 w-full">
-              <Button variant="outline" onClick={handlePreviousStep} className="flex-1">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-              <Button variant="outline" onClick={printReport} className="flex-1">
-                <Printer className="mr-2 h-4 w-4" />
-                Print Report
-              </Button>
-              <Button variant="outline" onClick={sendEmailReport} className="flex-1">
-                <Mail className="mr-2 h-4 w-4" />
-                Email Report
-              </Button>
-            </div>
-            <Button 
-              onClick={saveQuizData} 
-              disabled={isSubmitting || isGeneratingPlans} 
-              className="w-full"
-            >
-              {isSubmitting ? "Saving..." : isGeneratingPlans ? "Generating Plans..." : "Save Results & Generate Plans"}
-            </Button>
-          </CardFooter>
-        </Card>
-      );
-    }
-    
-    return null;
+  const handleViewResults = () => {
+    navigate("/quiz-results");
   };
 
   return (
@@ -551,11 +174,90 @@ const Quiz = () => {
           <div className="mb-6">
             <h1 className="text-2xl font-bold">Wellness Assessment</h1>
             <p className="text-muted-foreground">
-              Complete this quiz to receive personalized wellness recommendations
+              Complete this comprehensive quiz to receive personalized wellness recommendations
             </p>
           </div>
           
-          {renderCurrentStep()}
+          {showQuiz ? (
+            <FitnessQuiz 
+              onComplete={handleQuizComplete} 
+              onCancel={handleCancelQuiz}
+              initialData={userProfile?.quiz_data?.answers}
+            />
+          ) : (
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>Your Wellness Profile</CardTitle>
+                <CardDescription>
+                  {hasCompletedQuiz 
+                    ? `You last completed the wellness quiz on ${lastCompletedDate}`
+                    : "Take our comprehensive health assessment to get personalized recommendations"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {hasCompletedQuiz ? (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <Dumbbell className="mr-2 h-5 w-5 text-primary" />
+                        Your wellness profile is ready
+                      </h3>
+                      <p className="mt-2 text-muted-foreground">
+                        Based on your quiz responses, we've created personalized meal plans, training routines, and supplement recommendations tailored just for you.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold">Get Personalized Recommendations</h3>
+                      <p className="mt-2 text-muted-foreground">
+                        This comprehensive assessment takes about 5 minutes and covers:
+                      </p>
+                      <ul className="mt-3 space-y-2">
+                        <li className="flex items-start">
+                          <span className="bg-primary/20 text-primary rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5">1</span>
+                          <span>Fitness level, goals, and preferences</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="bg-primary/20 text-primary rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5">2</span>
+                          <span>Nutrition habits and dietary preferences</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="bg-primary/20 text-primary rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5">3</span>
+                          <span>Energy levels, sleep quality, and supplement needs</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
+                {hasCompletedQuiz ? (
+                  <>
+                    <Button className="w-full sm:w-auto" onClick={handleViewResults}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Your Report
+                    </Button>
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={handleStartQuiz}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Retake Quiz
+                    </Button>
+                  </>
+                ) : (
+                  <Button className="w-full" onClick={handleStartQuiz}>
+                    Start Wellness Quiz
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </CardFooter>
+              
+              {(isSubmitting || isGeneratingPlans) && (
+                <div className="flex items-center justify-center p-4 border-t">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span>{isSubmitting ? "Saving your responses..." : "Generating your personalized plans..."}</span>
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>
