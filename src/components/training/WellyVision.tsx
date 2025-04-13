@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Volume2, Volume1, CheckCircle2 } from "lucide-react";
@@ -275,6 +276,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           "Boa, continue assim!",
           "Isso mesmo, mantém o ritmo!",
           "Você está mandando bem!",
+          "Boa, JP!",
+          "Segue forte!",
+          "Excelente forma!",
+          "Vamos com tudo!"
         ];
         return startPhrases[Math.floor(Math.random() * startPhrases.length)];
       } else if (remainingReps > 0) {
@@ -283,10 +288,20 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           `Falta ${remainingReps}, você consegue!`,
           `Mais ${remainingReps} e terminou!`,
           "Está quase lá, não desista!",
+          `Só mais ${remainingReps}, força!`,
+          "Concentre-se, falta pouco!",
+          "Vamos lá, mantenha o foco!",
+          "Final do treino, não desista!"
         ];
         return midPhrases[Math.floor(Math.random() * midPhrases.length)];
       } else {
-        return "Última repetição, capricha!";
+        const finalPhrases = [
+          "Última repetição, capricha!",
+          "Agora é a última, dá tudo!",
+          "Finaliza com força!",
+          "Última rep, mostra seu potencial!"
+        ];
+        return finalPhrases[Math.floor(Math.random() * finalPhrases.length)];
       }
     } else {
       // English motivational phrases
@@ -296,6 +311,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           "Great job, keep it up!",
           "That's it, keep the pace!",
           "You're doing amazing!",
+          "Good form!",
+          "Keep it strong!",
+          "That's how you do it!",
+          "Looking good!"
         ];
         return startPhrases[Math.floor(Math.random() * startPhrases.length)];
       } else if (remainingReps > 0) {
@@ -304,10 +323,20 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           `${remainingReps} left, you can do it!`,
           `Just ${remainingReps} more and you're done!`,
           "You're almost there, don't give up!",
+          `${remainingReps} more, push yourself!`,
+          "Stay focused, almost done!",
+          "Push through, you got this!",
+          "Final stretch, keep going!"
         ];
         return midPhrases[Math.floor(Math.random() * midPhrases.length)];
       } else {
-        return "Last rep, give it all you've got!";
+        const finalPhrases = [
+          "Last rep, give it all you've got!",
+          "Final rep, make it count!",
+          "Finish strong!",
+          "Last one, best one!"
+        ];
+        return finalPhrases[Math.floor(Math.random() * finalPhrases.length)];
       }
     }
   };
@@ -320,6 +349,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         "Joelhos alinhados com os pés",
         "Mantenha o peito para cima",
         "Capricha na postura!",
+        "Desça mais, JP!",
+        "Controle a descida",
+        "Mantenha o equilíbrio",
+        "Olhe para frente",
+        "Respire durante o movimento"
       ];
       return phrases[Math.floor(Math.random() * phrases.length)];
     } else {
@@ -329,6 +363,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         "Knees in line with your feet",
         "Keep your chest up",
         "Watch your form!",
+        "Control the descent",
+        "Maintain your balance",
+        "Look forward",
+        "Remember to breathe",
+        "Engage your core"
       ];
       return phrases[Math.floor(Math.random() * phrases.length)];
     }
@@ -341,6 +380,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         "Incrível! Você completou o treino!",
         "Parabéns! Você arrasou hoje!",
         "Excelente trabalho! Treino finalizado!",
+        "Você é brabo JP!",
+        "Treino concluído com sucesso!",
+        "Mandou muito bem hoje!",
+        "Sensacional! Treino completo!"
       ];
       return phrases[Math.floor(Math.random() * phrases.length)];
     } else {
@@ -349,6 +392,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         "Amazing! You've completed the workout!",
         "Congrats! You rocked it today!",
         "Excellent work! Workout finished!",
+        "You're a champion! All done!",
+        "Workout complete! Well done!",
+        "Fantastic job today!",
+        "That's how it's done! Workout complete!"
       ];
       return phrases[Math.floor(Math.random() * phrases.length)];
     }

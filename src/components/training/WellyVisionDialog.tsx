@@ -27,8 +27,15 @@ const WellyVisionDialog: React.FC<WellyVisionDialogProps> = ({
   // Pre-load speech synthesis voices when dialog opens
   useEffect(() => {
     if (open && window.speechSynthesis) {
-      // This triggers voice loading in some browsers
+      // Pre-fetch voices to ensure they're available when needed
       window.speechSynthesis.getVoices();
+      
+      // Some browsers need a small delay to properly load voices
+      const timer = setTimeout(() => {
+        window.speechSynthesis.getVoices();
+      }, 200);
+      
+      return () => clearTimeout(timer);
     }
   }, [open]);
   
