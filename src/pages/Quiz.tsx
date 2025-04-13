@@ -124,8 +124,14 @@ const Quiz = () => {
       // Generate meal plan
       const mealPlan = generateMealPlan(quizData, userProfile, bodyComposition);
       
-      // Generate training plan
-      const trainingPlan = generateTrainingPlan(quizData, userProfile);
+      // We'll add error handling for the training plan generation
+      let trainingPlan;
+      try {
+        trainingPlan = generateTrainingPlan(quizData, userProfile);
+      } catch (error) {
+        console.error("Error generating training plan:", error);
+        trainingPlan = { workouts: [], schedule: [], intensity: "moderate" };
+      }
       
       // Generate supplement recommendations
       const supplementRecommendations = generateSupplementRecommendations(quizData);
