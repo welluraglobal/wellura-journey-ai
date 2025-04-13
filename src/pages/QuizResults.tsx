@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "@/contexts/UserContext";
@@ -24,7 +23,6 @@ import {
   ArrowRight
 } from "lucide-react";
 
-// Import recharts components for visualizations
 import { 
   PieChart as RechartsPieChart, 
   Pie, 
@@ -51,17 +49,14 @@ const QuizResults = () => {
     if (userProfile?.quiz_data) {
       setQuizData(userProfile.quiz_data);
       
-      // Generate body composition analysis
       const bodyComp = calculateBodyComposition(userProfile.quiz_data);
       setBodyComposition(bodyComp);
       
-      // Generate supplement recommendations
       const supplements = generateSupplementRecommendations(userProfile.quiz_data);
       setSupplementRecommendations(supplements);
       
       setLoading(false);
     } else {
-      // If no quiz data found, redirect to quiz page
       navigate("/quiz");
     }
   }, [userProfile, navigate]);
@@ -80,7 +75,6 @@ const QuizResults = () => {
     );
   }
 
-  // Calculate the weekly weight change target
   const calculateWeeklyTarget = () => {
     if (!bodyComposition) return null;
     
@@ -88,7 +82,6 @@ const QuizResults = () => {
     const targetWeight = parseFloat(quizData.answers.targetWeight);
     const weightDiff = Math.abs(currentWeight - targetWeight);
     
-    // Recommend 0.5-1kg per week for weight loss/gain
     const recommendedWeeklyChange = Math.min(weightDiff * 0.1, 1);
     const weeksToTarget = Math.ceil(weightDiff / recommendedWeeklyChange);
     
@@ -101,7 +94,6 @@ const QuizResults = () => {
 
   const weeklyTarget = calculateWeeklyTarget();
 
-  // Format data for the body composition pie chart
   const getBodyCompositionChartData = () => {
     if (!bodyComposition?.currentStats) return [];
     
@@ -113,7 +105,6 @@ const QuizResults = () => {
     ];
   };
 
-  // Format data for the macros bar chart
   const getMacrosChartData = () => {
     if (!bodyComposition?.macroRecommendations) return [];
     
@@ -126,7 +117,6 @@ const QuizResults = () => {
     ];
   };
 
-  // Format data for weight comparison chart
   const getWeightComparisonData = () => {
     if (!quizData?.answers) return [];
     
@@ -172,7 +162,6 @@ const QuizResults = () => {
             <TabsContent value="overview" className="mt-6">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Key Metrics Card */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -213,7 +202,6 @@ const QuizResults = () => {
                     </CardContent>
                   </Card>
                   
-                  {/* Daily Target Card */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -256,7 +244,6 @@ const QuizResults = () => {
                   </Card>
                 </div>
                 
-                {/* Weekly Target Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -362,7 +349,9 @@ const QuizResults = () => {
                             <ul className="space-y-2">
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Body Fat Percentage:</span>
-                                <span className="font-medium">{bodyComposition?.currentStats.bodyFatPercentage.toFixed(1)}%</span>
+                                <span className="font-medium">{typeof bodyComposition?.targetStats.targetBodyFatPercentage === 'number' 
+                                  ? bodyComposition?.targetStats.targetBodyFatPercentage.toFixed(1) 
+                                  : bodyComposition?.targetStats.targetBodyFatPercentage}%</span>
                               </li>
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Lean Mass:</span>
@@ -389,7 +378,9 @@ const QuizResults = () => {
                             <ul className="space-y-2">
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Target Body Fat:</span>
-                                <span className="font-medium">{bodyComposition?.targetStats.targetBodyFatPercentage.toFixed(1)}%</span>
+                                <span className="font-medium">{typeof bodyComposition?.targetStats.targetBodyFatPercentage === 'number' 
+                                  ? bodyComposition?.targetStats.targetBodyFatPercentage.toFixed(1) 
+                                  : bodyComposition?.targetStats.targetBodyFatPercentage}%</span>
                               </li>
                               <li className="flex justify-between">
                                 <span className="text-muted-foreground">Target Lean Mass:</span>
@@ -441,7 +432,6 @@ const QuizResults = () => {
               <div className="space-y-6">
                 <h2 className="text-2xl font-semibold">Your Personalized Plans</h2>
                 
-                {/* Meal Plan Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -472,7 +462,6 @@ const QuizResults = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Training Plan Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">

@@ -461,7 +461,12 @@ export const generateTrainingPlan = (quizData: any, userProfile: any) => {
 // Helper function to get workouts based on goal
 const getWorkoutsByGoal = (goalType: string, fitnessLevel: string, equipment: string, hasInjuries: boolean, daysPerWeek: number) => {
   // Template for workouts
-  const workoutsTemplate = {
+  const workoutsTemplate: Record<string, Record<string, Array<{ 
+    day: number; 
+    name: string; 
+    exercises: string[]; 
+    injuryNote?: string; // Add optional injuryNote property to the type
+  }>>> = {
     "general-fitness": {
       "beginner": [
         { day: 1, name: "Full Body Basics", exercises: ["Squats", "Push-ups (Modified)", "Plank", "Walking"] },
