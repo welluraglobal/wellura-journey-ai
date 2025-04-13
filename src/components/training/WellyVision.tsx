@@ -5,6 +5,10 @@ import { Camera, X, Volume2, Volume1, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDeviceSize, useOrientation } from "@/hooks/use-mobile";
 import WelluraPlaylistButton from "./WelluraPlaylistButton";
+import { useUser } from "@/contexts/UserContext";
+
+// Define the specific exercise types we support
+type ExerciseType = "Squat" | "Bicep Curl" | "Push-up" | "Plank" | "Shoulder Press";
 
 interface WellyVisionProps {
   exerciseName: string;
@@ -22,8 +26,9 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const [isActive, setIsActive] = useState(false);
   const [repCount, setRepCount] = useState(0);
   const [feedbackMode, setFeedbackMode] = useState<"motivational" | "technical">("motivational");
-  const [language, setLanguage] = useState<"en" | "pt-br">("en");
+  const [language, setLanguage] = useState<"en" | "pt-br">("pt-br");
   const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,18 +36,27 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const { toast } = useToast();
   const deviceSize = useDeviceSize();
   const orientation = useOrientation();
+  const { firstName } = useUser();
   
-  // Squat detection state
-  const [isSquatting, setIsSquatting] = useState(false);
-  const [squatProgress, setSquatProgress] = useState(0);
+  // Exercise detection state
+  const [isPerformingExercise, setIsPerformingExercise] = useState(false);
+  const [exerciseProgress, setExerciseProgress] = useState(0);
   const [keypoints, setKeypoints] = useState<any>(null);
-  const [squatDepth, setSquatDepth] = useState(0);
-  const [lastSquatTime, setLastSquatTime] = useState(0);
+  const [lastExerciseTime, setLastExerciseTime] = useState(0);
   
   // Initialize camera
   useEffect(() => {
     if (isActive && videoRef.current) {
       initCamera();
+      
+      // Play welcome message if not played yet
+      if (!hasPlayedIntro) {
+        setTimeout(() => {
+          playWelcomeMessage();
+          setHasPlayedIntro(true);
+        }, 1000); // Slight delay to ensure camera is initialized
+      }
+      
       return () => {
         stopPoseDetection();
       };
@@ -58,7 +72,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         tracks.forEach(track => track.stop());
       }
     };
-  }, [isActive]);
+  }, [isActive, hasPlayedIntro]);
   
   // Check for workout completion
   useEffect(() => {
@@ -77,6 +91,19 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       }, 2500);
     }
   }, [repCount, targetReps, exerciseName, onComplete]);
+  
+  const playWelcomeMessage = () => {
+    const userName = firstName || "there";
+    let welcomeText = "";
+    
+    if (language === "pt-br") {
+      welcomeText = `Bem-vindo, ${userName}. Este exercício se chama ${exerciseName}, e eu vou te ajudar a executar da forma correta para alcançar seus resultados. Vamos começar!`;
+    } else {
+      welcomeText = `Welcome, ${userName}. This exercise is called ${exerciseName}, and I'll guide you to perform it correctly so you can get real results. Let's begin!`;
+    }
+    
+    playFeedback(welcomeText);
+  };
   
   const initCamera = async () => {
     try {
@@ -114,10 +141,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   
   const startPoseDetection = () => {
     if (!videoRef.current || !canvasRef.current) return;
-
-    // Since we're not using MediaPipe directly due to installation issues,
-    // we'll implement a simplified but effective squat detection algorithm
-    // based on vertical movement tracking
     
     // Set up canvas for visualization
     const ctx = canvasRef.current.getContext('2d');
@@ -126,10 +149,9 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
     
-    // Motion detection variables for squat
-    let prevY = 0;
+    // Exercise-specific motion detection variables
     let motionBuffer: number[] = [];
-    const bufferSize = 10; // Store last 10 vertical positions
+    const bufferSize = 10; // Store last 10 positions
     
     const detectPose = () => {
       if (!videoRef.current || !canvasRef.current || !ctx) return;
@@ -145,20 +167,64 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         canvasRef.current.height
       );
       
-      // Simplified motion detection for squats
-      // In a real implementation, we would use a pose estimation model here
-      
-      // We'll use a simple technique of analyzing pixel changes in the lower half of the frame
-      // This is a simplification that looks for general movement patterns
-      
-      // Get pixel data from the lower middle portion of the frame where squats occur
+      // Exercise-specific detection logic
       const frameWidth = canvasRef.current.width;
       const frameHeight = canvasRef.current.height;
       
-      const sampleRegionX = Math.floor(frameWidth * 0.4); // 40% from left
-      const sampleRegionY = Math.floor(frameHeight * 0.6); // 60% from top (lower part of frame)
-      const sampleWidth = Math.floor(frameWidth * 0.2); // 20% of width
-      const sampleHeight = Math.floor(frameHeight * 0.3); // 30% of height
+      // Determine the region to analyze based on exercise type
+      let sampleRegionX = 0;
+      let sampleRegionY = 0;
+      let sampleWidth = 0;
+      let sampleHeight = 0;
+      
+      switch(exerciseName) {
+        case "Squat":
+          // Focus on lower body for squats
+          sampleRegionX = Math.floor(frameWidth * 0.4); // 40% from left
+          sampleRegionY = Math.floor(frameHeight * 0.6); // 60% from top (lower part)
+          sampleWidth = Math.floor(frameWidth * 0.2); // 20% of width
+          sampleHeight = Math.floor(frameHeight * 0.3); // 30% of height
+          break;
+          
+        case "Bicep Curl":
+          // Focus on arm region for bicep curls
+          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
+          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top (middle area)
+          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
+          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          break;
+          
+        case "Push-up":
+          // Focus on upper body for push-ups
+          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
+          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top
+          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
+          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          break;
+          
+        case "Plank":
+          // Monitor the entire body for planks
+          sampleRegionX = Math.floor(frameWidth * 0.2); // 20% from left
+          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top
+          sampleWidth = Math.floor(frameWidth * 0.6); // 60% of width
+          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          break;
+          
+        case "Shoulder Press":
+          // Focus on upper body and shoulders
+          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
+          sampleRegionY = Math.floor(frameHeight * 0.2); // 20% from top (upper area)
+          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
+          sampleHeight = Math.floor(frameHeight * 0.3); // 30% of height
+          break;
+          
+        default:
+          // Default region covers the center of the frame
+          sampleRegionX = Math.floor(frameWidth * 0.3);
+          sampleRegionY = Math.floor(frameHeight * 0.3);
+          sampleWidth = Math.floor(frameWidth * 0.4);
+          sampleHeight = Math.floor(frameHeight * 0.4);
+      }
       
       const imageData = ctx.getImageData(
         sampleRegionX, 
@@ -167,30 +233,51 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         sampleHeight
       );
       
-      // Calculate movement metric based on pixel brightness in region
-      let totalBrightness = 0;
-      for (let i = 0; i < imageData.data.length; i += 4) {
-        // Simple grayscale conversion for brightness
-        const r = imageData.data[i];
-        const g = imageData.data[i + 1];
-        const b = imageData.data[i + 2];
-        const brightness = (r + g + b) / 3;
-        totalBrightness += brightness;
+      // Exercise-specific motion detection
+      let motionValue = 0;
+      
+      switch(exerciseName) {
+        case "Squat":
+          // For squats, we analyze vertical motion
+          motionValue = detectSquatMotion(imageData, sampleWidth, sampleHeight);
+          break;
+          
+        case "Bicep Curl":
+          // For bicep curls, we analyze arm flexion
+          motionValue = detectBicepCurlMotion(imageData, sampleWidth, sampleHeight);
+          break;
+          
+        case "Push-up":
+          // For push-ups, we analyze vertical movement of upper body
+          motionValue = detectPushUpMotion(imageData, sampleWidth, sampleHeight);
+          break;
+          
+        case "Plank":
+          // For planks, we look for stability and small movements
+          motionValue = detectPlankMotion(imageData, sampleWidth, sampleHeight);
+          break;
+          
+        case "Shoulder Press":
+          // For shoulder press, we analyze upward motion
+          motionValue = detectShoulderPressMotion(imageData, sampleWidth, sampleHeight);
+          break;
+          
+        default:
+          // Use general motion detection as fallback
+          motionValue = detectGeneralMotion(imageData, sampleWidth, sampleHeight);
       }
       
-      const avgBrightness = totalBrightness / (sampleWidth * sampleHeight);
-      
       // Add to motion buffer
-      motionBuffer.push(avgBrightness);
+      motionBuffer.push(motionValue);
       if (motionBuffer.length > bufferSize) {
         motionBuffer.shift();
       }
       
-      // Calculate motion trend (are we going down or up?)
+      // Calculate motion trend (are we going up/down/stable)
       const motionTrend = calculateMotionTrend(motionBuffer);
       
       // Draw visualization rectangle for debugging
-      ctx.strokeStyle = isSquatting ? 'green' : 'red';
+      ctx.strokeStyle = isPerformingExercise ? 'green' : 'red';
       ctx.lineWidth = 2;
       ctx.strokeRect(sampleRegionX, sampleRegionY, sampleWidth, sampleHeight);
       
@@ -198,45 +285,15 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       ctx.font = '16px Arial';
       ctx.fillStyle = 'white';
       ctx.fillText(`Rep Count: ${repCount}`, 10, 30);
-      ctx.fillText(`Squatting: ${isSquatting ? 'YES' : 'NO'}`, 10, 60);
+      ctx.fillText(`${exerciseName}: ${isPerformingExercise ? 'IN PROGRESS' : 'READY'}`, 10, 60);
       ctx.fillText(`Motion: ${motionTrend.toFixed(2)}`, 10, 90);
       
-      // Detect squat based on motion trend - a negative trend means going down, positive means going up
-      const squatThreshold = 5;
+      // Exercise-specific detection logic
+      const exerciseThreshold = getExerciseThreshold(exerciseName);
       const now = Date.now();
       
-      // Detect start of squat (going down)
-      if (!isSquatting && motionTrend < -squatThreshold) {
-        setIsSquatting(true);
-        setSquatProgress(25); // Start of squat
-      }
-      
-      // Update squat progress
-      if (isSquatting) {
-        if (motionTrend < -squatThreshold) {
-          // Still going down
-          setSquatProgress(prev => Math.min(prev + 15, 50));
-        } else if (motionTrend > squatThreshold) {
-          // Going up - completing the squat
-          setSquatProgress(prev => {
-            const newProgress = prev + 15;
-            if (newProgress >= 100) {
-              // Complete rep if it's been at least 1 second since last squat
-              if (now - lastSquatTime > 1000) {
-                setIsSquatting(false);
-                setLastSquatTime(now);
-                setRepCount(prev => {
-                  const newCount = prev + 1;
-                  provideFeedback(newCount, targetReps);
-                  return newCount;
-                });
-              }
-              return 0;
-            }
-            return newProgress;
-          });
-        }
-      }
+      // Exercise-specific rep detection
+      detectExerciseRep(exerciseName, motionTrend, exerciseThreshold, now);
       
       // Schedule next frame
       animationRef.current = requestAnimationFrame(detectPose);
@@ -244,6 +301,300 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     
     // Start detection loop
     animationRef.current = requestAnimationFrame(detectPose);
+  };
+  
+  // Exercise-specific motion detection functions
+  const detectSquatMotion = (imageData: ImageData, width: number, height: number): number => {
+    // Calculate movement based on pixel brightness in lower body region
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const detectBicepCurlMotion = (imageData: ImageData, width: number, height: number): number => {
+    // Focus on vertical motion in arm region for bicep curl
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const detectPushUpMotion = (imageData: ImageData, width: number, height: number): number => {
+    // Detect vertical movement of upper body for push-ups
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const detectPlankMotion = (imageData: ImageData, width: number, height: number): number => {
+    // For planks, minor movement is normal, but large changes mean breaking form
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const detectShoulderPressMotion = (imageData: ImageData, width: number, height: number): number => {
+    // Detect upward motion for shoulder press
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const detectGeneralMotion = (imageData: ImageData, width: number, height: number): number => {
+    // Generic motion detection as fallback
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+    }
+    
+    return totalBrightness / (width * height);
+  };
+  
+  const getExerciseThreshold = (exercise: string): number => {
+    // Different exercises have different thresholds for motion detection
+    switch(exercise) {
+      case "Squat":
+        return 5;
+      case "Bicep Curl":
+        return 4;
+      case "Push-up":
+        return 6;
+      case "Plank":
+        return 2; // Planks require stability, so a lower threshold
+      case "Shoulder Press":
+        return 5;
+      default:
+        return 5;
+    }
+  };
+  
+  const detectExerciseRep = (exercise: string, motionTrend: number, threshold: number, now: number) => {
+    // Exercise-specific rep detection logic
+    switch(exercise) {
+      case "Squat":
+        // For squats: negative trend means going down, positive means going up
+        if (!isPerformingExercise && motionTrend < -threshold) {
+          setIsPerformingExercise(true);
+          setExerciseProgress(25); // Start of squat
+        }
+        
+        if (isPerformingExercise) {
+          if (motionTrend < -threshold) {
+            // Still going down
+            setExerciseProgress(prev => Math.min(prev + 15, 50));
+          } else if (motionTrend > threshold) {
+            // Going up - completing the squat
+            setExerciseProgress(prev => {
+              const newProgress = prev + 15;
+              if (newProgress >= 100) {
+                // Complete rep if it's been at least 1 second since last rep
+                if (now - lastExerciseTime > 1000) {
+                  setIsPerformingExercise(false);
+                  setLastExerciseTime(now);
+                  setRepCount(prev => {
+                    const newCount = prev + 1;
+                    provideFeedback(newCount, targetReps);
+                    return newCount;
+                  });
+                }
+                return 0;
+              }
+              return newProgress;
+            });
+          }
+        }
+        break;
+        
+      case "Bicep Curl":
+        // For bicep curls: positive trend means curling up, negative means lowering
+        if (!isPerformingExercise && motionTrend > threshold) {
+          setIsPerformingExercise(true);
+          setExerciseProgress(25); // Start of curl
+        }
+        
+        if (isPerformingExercise) {
+          if (motionTrend > threshold) {
+            // Still curling up
+            setExerciseProgress(prev => Math.min(prev + 15, 50));
+          } else if (motionTrend < -threshold) {
+            // Lowering - completing the curl
+            setExerciseProgress(prev => {
+              const newProgress = prev + 15;
+              if (newProgress >= 100) {
+                // Complete rep if it's been at least 1 second since last rep
+                if (now - lastExerciseTime > 1000) {
+                  setIsPerformingExercise(false);
+                  setLastExerciseTime(now);
+                  setRepCount(prev => {
+                    const newCount = prev + 1;
+                    provideFeedback(newCount, targetReps);
+                    return newCount;
+                  });
+                }
+                return 0;
+              }
+              return newProgress;
+            });
+          }
+        }
+        break;
+        
+      case "Push-up":
+        // For push-ups: negative trend means going down, positive means pushing up
+        if (!isPerformingExercise && motionTrend < -threshold) {
+          setIsPerformingExercise(true);
+          setExerciseProgress(25); // Start of push-up
+        }
+        
+        if (isPerformingExercise) {
+          if (motionTrend < -threshold) {
+            // Still going down
+            setExerciseProgress(prev => Math.min(prev + 15, 50));
+          } else if (motionTrend > threshold) {
+            // Pushing up - completing the push-up
+            setExerciseProgress(prev => {
+              const newProgress = prev + 15;
+              if (newProgress >= 100) {
+                // Complete rep if it's been at least 1 second since last rep
+                if (now - lastExerciseTime > 1000) {
+                  setIsPerformingExercise(false);
+                  setLastExerciseTime(now);
+                  setRepCount(prev => {
+                    const newCount = prev + 1;
+                    provideFeedback(newCount, targetReps);
+                    return newCount;
+                  });
+                }
+                return 0;
+              }
+              return newProgress;
+            });
+          }
+        }
+        break;
+        
+      case "Plank":
+        // For planks: monitor stability, count time instead of reps
+        // This is just a placeholder as planks require time tracking rather than rep counting
+        if (Math.abs(motionTrend) < threshold) {
+          // Stable plank - progress increases with time
+          setIsPerformingExercise(true);
+          setExerciseProgress(prev => Math.min(prev + 1, 100));
+          
+          // Check if we should provide feedback
+          if (now - lastExerciseTime > 5000) { // Every 5 seconds
+            provideFeedback(repCount, targetReps);
+            setLastExerciseTime(now);
+          }
+        } else {
+          // Too much movement - breaking form
+          setIsPerformingExercise(false);
+          setExerciseProgress(0);
+        }
+        break;
+        
+      case "Shoulder Press":
+        // For shoulder press: positive trend means pressing up, negative means lowering
+        if (!isPerformingExercise && motionTrend > threshold) {
+          setIsPerformingExercise(true);
+          setExerciseProgress(25); // Start of press
+        }
+        
+        if (isPerformingExercise) {
+          if (motionTrend > threshold) {
+            // Still pressing up
+            setExerciseProgress(prev => Math.min(prev + 15, 50));
+          } else if (motionTrend < -threshold) {
+            // Lowering - completing the press
+            setExerciseProgress(prev => {
+              const newProgress = prev + 15;
+              if (newProgress >= 100) {
+                // Complete rep if it's been at least 1 second since last rep
+                if (now - lastExerciseTime > 1000) {
+                  setIsPerformingExercise(false);
+                  setLastExerciseTime(now);
+                  setRepCount(prev => {
+                    const newCount = prev + 1;
+                    provideFeedback(newCount, targetReps);
+                    return newCount;
+                  });
+                }
+                return 0;
+              }
+              return newProgress;
+            });
+          }
+        }
+        break;
+        
+      default:
+        // Use squat detection as fallback
+        if (!isPerformingExercise && motionTrend < -threshold) {
+          setIsPerformingExercise(true);
+          setExerciseProgress(25);
+        }
+        
+        if (isPerformingExercise) {
+          if (motionTrend < -threshold) {
+            setExerciseProgress(prev => Math.min(prev + 15, 50));
+          } else if (motionTrend > threshold) {
+            setExerciseProgress(prev => {
+              const newProgress = prev + 15;
+              if (newProgress >= 100) {
+                if (now - lastExerciseTime > 1000) {
+                  setIsPerformingExercise(false);
+                  setLastExerciseTime(now);
+                  setRepCount(prev => {
+                    const newCount = prev + 1;
+                    provideFeedback(newCount, targetReps);
+                    return newCount;
+                  });
+                }
+                return 0;
+              }
+              return newProgress;
+            });
+          }
+        }
+    }
   };
   
   const calculateMotionTrend = (buffer: number[]) => {
@@ -342,34 +693,182 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const getTechnicalPhrase = (): string => {
+    // Exercise-specific technical feedback
     if (language === "pt-br") {
-      const phrases = [
-        "Mantenha as costas retas",
-        "Desça mais profundo",
-        "Joelhos alinhados com os pés",
-        "Mantenha o peito para cima",
-        "Capricha na postura!",
-        "Desça mais, JP!",
-        "Controle a descida",
-        "Mantenha o equilíbrio",
-        "Olhe para frente",
-        "Respire durante o movimento"
-      ];
-      return phrases[Math.floor(Math.random() * phrases.length)];
+      let exercisePhrases: string[] = [];
+      
+      switch (exerciseName) {
+        case "Squat":
+          exercisePhrases = [
+            "Mantenha as costas retas",
+            "Desça mais profundo",
+            "Joelhos alinhados com os pés",
+            "Mantenha o peito para cima",
+            "Capricha na postura!",
+            "Desça mais, JP!",
+            "Controle a descida",
+            "Mantenha o equilíbrio",
+            "Olhe para frente",
+            "Respire durante o movimento",
+            "Desça mais para ativar os glúteos",
+            "Mantenha os calcanhares no chão"
+          ];
+          break;
+          
+        case "Bicep Curl":
+          exercisePhrases = [
+            "Mantenha o cotovelo parado",
+            "Evite balançar o corpo",
+            "Controle a descida",
+            "Concentre-se na contração do bíceps",
+            "Mantenha os ombros para trás",
+            "Punhos firmes durante o movimento",
+            "Complete a amplitude de movimento",
+            "Mantenha o ritmo constante"
+          ];
+          break;
+          
+        case "Push-up":
+          exercisePhrases = [
+            "Tronco reto, desça até 90 graus",
+            "Mantenha firmeza no abdômen",
+            "Cotovelos junto ao corpo",
+            "Olhe ligeiramente à frente",
+            "Não deixe o quadril cair",
+            "Mantenha as escápulas estáveis",
+            "Respire durante o movimento",
+            "Contração total no topo"
+          ];
+          break;
+          
+        case "Plank":
+          exercisePhrases = [
+            "Mantenha o abdômen contraído",
+            "Corpo em linha reta",
+            "Não deixe o quadril subir",
+            "Olhe para baixo, mantenha o pescoço neutro",
+            "Respire normalmente",
+            "Aperte os glúteos",
+            "Pressione os antebraços contra o chão",
+            "Mantenha os ombros afastados das orelhas"
+          ];
+          break;
+          
+        case "Shoulder Press":
+          exercisePhrases = [
+            "Mantenha o core estável",
+            "Cotovelos em ângulo de 90 graus na base",
+            "Pressione diretamente para cima",
+            "Não arquee as costas",
+            "Mantenha o ritmo controlado",
+            "Respire durante o movimento",
+            "Alinhe os pulsos corretamente",
+            "Contração completa no topo"
+          ];
+          break;
+          
+        default:
+          exercisePhrases = [
+            "Mantenha as costas retas",
+            "Controle o movimento",
+            "Respire durante o exercício",
+            "Mantenha a postura correta",
+            "Concentre-se na técnica",
+            "Movimento controlado é melhor",
+            "Qualidade sobre quantidade",
+            "Mantenha o foco na execução"
+          ];
+      }
+      
+      return exercisePhrases[Math.floor(Math.random() * exercisePhrases.length)];
     } else {
-      const phrases = [
-        "Keep your back straight",
-        "Go deeper with your squat",
-        "Knees in line with your feet",
-        "Keep your chest up",
-        "Watch your form!",
-        "Control the descent",
-        "Maintain your balance",
-        "Look forward",
-        "Remember to breathe",
-        "Engage your core"
-      ];
-      return phrases[Math.floor(Math.random() * phrases.length)];
+      // English technical phrases
+      let exercisePhrases: string[] = [];
+      
+      switch (exerciseName) {
+        case "Squat":
+          exercisePhrases = [
+            "Keep your back straight",
+            "Go deeper with your squat",
+            "Knees in line with your feet",
+            "Keep your chest up",
+            "Watch your form!",
+            "Control the descent",
+            "Maintain your balance",
+            "Look forward",
+            "Remember to breathe",
+            "Engage your core",
+            "Lower deeper to activate glutes",
+            "Keep your heels on the ground"
+          ];
+          break;
+          
+        case "Bicep Curl":
+          exercisePhrases = [
+            "Keep your elbow fixed",
+            "Avoid swinging your body",
+            "Control the downward motion",
+            "Focus on the bicep contraction",
+            "Keep shoulders back",
+            "Firm wrists throughout",
+            "Complete full range of motion",
+            "Maintain steady tempo"
+          ];
+          break;
+          
+        case "Push-up":
+          exercisePhrases = [
+            "Straight torso, lower to 90 degrees",
+            "Keep your core tight",
+            "Elbows close to your body",
+            "Look slightly forward",
+            "Don't let your hips sag",
+            "Keep shoulder blades stable",
+            "Breathe through the movement",
+            "Full contraction at the top"
+          ];
+          break;
+          
+        case "Plank":
+          exercisePhrases = [
+            "Keep your abs engaged",
+            "Straight line from head to heels",
+            "Don't let your hips rise",
+            "Look down, keep your neck neutral",
+            "Breathe normally",
+            "Squeeze your glutes",
+            "Press forearms into the ground",
+            "Keep shoulders away from ears"
+          ];
+          break;
+          
+        case "Shoulder Press":
+          exercisePhrases = [
+            "Keep your core stable",
+            "Elbows at 90 degrees at bottom",
+            "Press directly upward",
+            "Don't arch your back",
+            "Keep controlled tempo",
+            "Breathe through the movement",
+            "Align your wrists properly",
+            "Full contraction at the top"
+          ];
+          break;
+          
+        default:
+          exercisePhrases = [
+            "Keep your back straight",
+            "Control the movement",
+            "Remember to breathe",
+            "Maintain proper posture",
+            "Focus on technique",
+            "Controlled movement is better",
+            "Quality over quantity",
+            "Stay focused on execution"
+          ];
+      }
+      
+      return exercisePhrases[Math.floor(Math.random() * exercisePhrases.length)];
     }
   };
   
@@ -477,6 +976,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     
     setIsActive(true);
     setRepCount(0);
+    setHasPlayedIntro(false);
   };
   
   const stopWorkout = () => {
@@ -517,13 +1017,13 @@ const WellyVision: React.FC<WellyVisionProps> = ({
               </div>
             </div>
             
-            {/* Squat progress indicator */}
-            {isSquatting && (
+            {/* Exercise progress indicator */}
+            {isPerformingExercise && (
               <div className="absolute bottom-20 left-4 right-4">
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
                   <div 
                     className="bg-primary h-2.5 rounded-full" 
-                    style={{ width: `${squatProgress}%` }}
+                    style={{ width: `${exerciseProgress}%` }}
                   ></div>
                 </div>
               </div>
