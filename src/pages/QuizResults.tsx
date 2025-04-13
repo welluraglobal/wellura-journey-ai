@@ -95,7 +95,7 @@ const QuizResults = () => {
   const weeklyTarget = calculateWeeklyTarget();
 
   const getBodyFatPercentage = () => {
-    const bodyFatPercentage = bodyComposition?.currentStats?.bodyFatPercentage;
+    const bodyFatPercentage = bodyComposition?.targetStats?.targetBodyFatPercentage;
     
     return typeof bodyFatPercentage === 'number' 
       ? bodyFatPercentage.toFixed(1) 
