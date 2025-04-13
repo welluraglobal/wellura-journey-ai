@@ -5,7 +5,7 @@ import NavBar from "@/components/NavBar";
 import QuizResultsSection from "@/components/quiz/QuizResultsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, Utensils, Dumbbell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
@@ -30,6 +30,8 @@ const QuizResults = () => {
   const [supplementRecommendations, setSupplementRecommendations] = useState<any[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [mealPlan, setMealPlan] = useState<any>(null);
+  const [trainingPlan, setTrainingPlan] = useState<any>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -67,6 +69,22 @@ const QuizResults = () => {
       } else {
         console.log("No goals found in user profile");
       }
+
+      // Get meal plan from user profile
+      if (userProfile.mealPlan) {
+        console.log("Meal plan found:", userProfile.mealPlan);
+        setMealPlan(userProfile.mealPlan);
+      } else {
+        console.log("No meal plan found in user profile");
+      }
+
+      // Get training plan from user profile
+      if (userProfile.trainingPlan) {
+        console.log("Training plan found:", userProfile.trainingPlan);
+        setTrainingPlan(userProfile.trainingPlan);
+      } else {
+        console.log("No training plan found in user profile");
+      }
     } else {
       console.log("No user profile data available");
     }
@@ -76,6 +94,38 @@ const QuizResults = () => {
 
   const handleRetakeQuiz = () => {
     navigate("/quiz");
+  };
+
+  const handleViewMealPlan = () => {
+    if (mealPlan) {
+      navigate("/meals", { state: { quizGeneratedPlan: mealPlan }});
+      toast({
+        title: "Quiz-based Meal Plan",
+        description: "Viewing your personalized meal plan based on quiz results",
+      });
+    } else {
+      toast({
+        title: "No Meal Plan Found",
+        description: "Complete the wellness quiz to generate a personalized meal plan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewTrainingPlan = () => {
+    if (trainingPlan) {
+      navigate("/training", { state: { quizGeneratedPlan: trainingPlan }});
+      toast({
+        title: "Quiz-based Training Plan",
+        description: "Viewing your personalized training plan based on quiz results",
+      });
+    } else {
+      toast({
+        title: "No Training Plan Found",
+        description: "Complete the wellness quiz to generate a personalized training plan",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -106,11 +156,68 @@ const QuizResults = () => {
               </CardContent>
             </Card>
           ) : (
-            <QuizResultsSection 
-              bodyComposition={bodyComposition}
-              supplementRecommendations={supplementRecommendations}
-              selectedGoals={selectedGoals}
-            />
+            <>
+              <QuizResultsSection 
+                bodyComposition={bodyComposition}
+                supplementRecommendations={supplementRecommendations}
+                selectedGoals={selectedGoals}
+              />
+              
+              {/* New section for personalized plans */}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="flex flex-col">
+                  <CardContent className="p-6 flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Utensils className="h-8 w-8 text-primary" />
+                      <div>
+                        <h3 className="text-xl font-semibold">Personalized Meal Plan</h3>
+                        <p className="text-sm text-muted-foreground">Based on your quiz responses</p>
+                      </div>
+                    </div>
+                    
+                    <p className="mb-4">
+                      {mealPlan 
+                        ? `Your meal plan has been generated with ${mealPlan.mealCount || 3} meals per day, focused on your ${mealPlan.mainGoal || "overall fitness"} goal.`
+                        : "Take the wellness quiz to generate your personalized meal plan."}
+                    </p>
+                    
+                    <Button 
+                      onClick={handleViewMealPlan} 
+                      className="w-full"
+                      disabled={!mealPlan}
+                    >
+                      View Your Meal Plan
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="flex flex-col">
+                  <CardContent className="p-6 flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Dumbbell className="h-8 w-8 text-primary" />
+                      <div>
+                        <h3 className="text-xl font-semibold">Personalized Training Plan</h3>
+                        <p className="text-sm text-muted-foreground">Based on your quiz responses</p>
+                      </div>
+                    </div>
+                    
+                    <p className="mb-4">
+                      {trainingPlan 
+                        ? `Your training plan includes ${trainingPlan.workouts?.length || 0} workouts per week, designed for your ${trainingPlan.level || "beginner"} level.`
+                        : "Take the wellness quiz to generate your personalized training plan."}
+                    </p>
+                    
+                    <Button 
+                      onClick={handleViewTrainingPlan} 
+                      className="w-full"
+                      disabled={!trainingPlan}
+                    >
+                      View Your Training Plan
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
           )}
         </div>
       </div>
