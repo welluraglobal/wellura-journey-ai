@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell, Calendar, ArrowRight, Clock, Trophy, Film } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock training plans data
 const mockTrainingPlans = [
@@ -59,9 +60,34 @@ const Training = () => {
   const [activeTab, setActiveTab] = useState("plans");
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const togglePlanDetails = (planId: string) => {
     setExpandedPlan(expandedPlan === planId ? null : planId);
+  };
+
+  const handleStartPlan = (planId: string, planName: string) => {
+    console.log(`Starting plan: ${planId} - ${planName}`);
+    toast({
+      title: "Training Plan Started",
+      description: `You've started the ${planName} training plan.`,
+    });
+    // Here you would typically save the selected plan to user's profile
+    // and redirect to a more detailed view of the plan
+    setActiveTab("progress");
+  };
+
+  const handleSchedulePlan = (planId: string, planName: string) => {
+    console.log(`Scheduling plan: ${planId} - ${planName}`);
+    toast({
+      title: "Plan Scheduled",
+      description: `${planName} has been added to your calendar.`,
+    });
+    // Here you would typically integrate with a calendar or scheduling system
+  };
+
+  const handleViewDetails = (planId: string) => {
+    togglePlanDetails(planId);
   };
 
   return (
@@ -111,7 +137,7 @@ const Training = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => togglePlanDetails(plan.id)}
+                          onClick={() => handleViewDetails(plan.id)}
                         >
                           {expandedPlan === plan.id ? "Hide Details" : "View Details"}
                         </Button>
@@ -161,11 +187,18 @@ const Training = () => {
                     </CardContent>
                     
                     <CardFooter className="flex justify-end gap-2 bg-muted/10 pt-4">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleSchedulePlan(plan.id, plan.name)}
+                      >
                         <Calendar className="h-4 w-4 mr-2" />
                         Schedule
                       </Button>
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={() => handleStartPlan(plan.id, plan.name)}
+                      >
                         Start Plan
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
