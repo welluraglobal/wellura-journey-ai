@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import NavBar from "@/components/NavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -12,15 +14,15 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
-import { Footprints, Flame, Trophy } from "lucide-react";
+import { Footprints, Flame, Trophy, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import StepCounter from "@/components/steps/StepCounter";
 import StepMetrics from "@/components/steps/StepMetrics";
 import { healthService, HealthData, HistoricalHealthData } from "@/services/healthService";
-import { Button, MessageCircle } from "lucide-react";
-import { navigate } from "react-router-dom";
 
 const StepTracker = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [healthData, setHealthData] = useState<HealthData>({ steps: 0, calories: 0, distance: 0, activeMinutes: 0 });
   const [historicalData, setHistoricalData] = useState<HistoricalHealthData[]>([]);
@@ -232,6 +234,7 @@ const StepTracker = () => {
             <Button 
               onClick={shareWithAIConsultant}
               className="w-full"
+              variant="default"
             >
               <MessageCircle className="mr-2 h-4 w-4" />
               Compartilhar Dados com Consultor de IA
