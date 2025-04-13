@@ -11,7 +11,8 @@ import {
   Dumbbell, 
   MapPin, 
   MessageCircle, 
-  Users
+  Users,
+  Footprints
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -56,6 +57,12 @@ const Dashboard = () => {
       description: "Discover qualified health professionals in your area based on your needs.",
       icon: Users,
       link: "/find-professionals"
+    },
+    {
+      title: "Step Tracker",
+      description: "Track your daily steps and calories burned with visual reports.",
+      icon: Footprints,
+      link: "/step-tracker"
     }
   ];
 
@@ -146,10 +153,10 @@ const Dashboard = () => {
               <Button 
                 size="lg" 
                 className="h-24 flex flex-col items-center justify-center gap-2"
-                onClick={() => handleNavigate('/find-professionals')}
+                onClick={() => handleNavigate('/step-tracker')}
               >
-                <Users className="h-6 w-6 mb-1" />
-                <span>Health Professionals</span>
+                <Footprints className="h-6 w-6 mb-1" />
+                <span>Step Tracker</span>
               </Button>
             </div>
           </section>
