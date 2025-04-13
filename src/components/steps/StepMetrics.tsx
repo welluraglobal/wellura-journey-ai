@@ -1,17 +1,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Footprints, Flame, Timer, ArrowUpRight } from "lucide-react";
+import { Footprints, Flame, Timer, ArrowUpRight, Navigation } from "lucide-react";
+import { HealthData } from "@/services/healthService";
 
 interface StepMetricsProps {
-  totalSteps: number;
+  healthData: HealthData;
   averageSteps: number;
-  totalCalories: number;
 }
 
-const StepMetrics = ({ totalSteps, averageSteps, totalCalories }: StepMetricsProps) => {
-  // Calculate approximate values for distance and active time
-  const approximateDistance = (totalSteps * 0.0008).toFixed(2); // in km, rough estimate
-  const approximateActiveMinutes = Math.floor(totalSteps / 100); // rough approximation
+const StepMetrics = ({ healthData, averageSteps }: StepMetricsProps) => {
+  const { steps, calories, distance, activeMinutes } = healthData;
   
   return (
     <Card className="w-full">
@@ -26,7 +24,7 @@ const StepMetrics = ({ totalSteps, averageSteps, totalCalories }: StepMetricsPro
               Total de Passos
             </div>
             <div className="text-2xl font-semibold">
-              {totalSteps.toLocaleString('pt-BR')}
+              {steps.toLocaleString('pt-BR')}
             </div>
           </div>
           
@@ -36,7 +34,7 @@ const StepMetrics = ({ totalSteps, averageSteps, totalCalories }: StepMetricsPro
               Calorias Queimadas
             </div>
             <div className="text-2xl font-semibold">
-              {totalCalories.toLocaleString('pt-BR')}
+              {calories.toLocaleString('pt-BR')}
             </div>
           </div>
           
@@ -52,11 +50,21 @@ const StepMetrics = ({ totalSteps, averageSteps, totalCalories }: StepMetricsPro
           
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center text-sm text-muted-foreground">
+              <Navigation className="h-4 w-4 mr-1" />
+              Distância
+            </div>
+            <div className="text-2xl font-semibold">
+              {distance.toFixed(2)} km
+            </div>
+          </div>
+          
+          <div className="flex flex-col space-y-1.5 col-span-2">
+            <div className="flex items-center text-sm text-muted-foreground">
               <Timer className="h-4 w-4 mr-1" />
               Tempo Ativo
             </div>
             <div className="text-2xl font-semibold">
-              {approximateActiveMinutes} min
+              {activeMinutes} min
             </div>
           </div>
         </div>

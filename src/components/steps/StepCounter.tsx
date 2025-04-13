@@ -3,17 +3,69 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Footprints } from "lucide-react";
+import { useEffect, useState } from "react";
+import { healthService } from "@/services/healthService";
+import { useToast } from "@/hooks/use-toast";
 
 interface StepCounterProps {
   steps: number;
   isTracking: boolean;
   onStartTracking: () => void;
+  onStopTracking: () => void;
 }
 
-const StepCounter = ({ steps, isTracking, onStartTracking }: StepCounterProps) => {
+const StepCounter = ({ steps, isTracking, onStartTracking, onStopTracking }: StepCounterProps) => {
+  const { toast } = useToast();
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
   // Target steps per day (recommended by health experts)
   const targetSteps = 10000;
   const progressPercentage = Math.min(100, (steps / targetSteps) * 100);
+  
+  useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        const permission = await healthService.requestPermissions();
+        setHasPermission(permission);
+        
+        if (!permission) {
+          toast({
+            title: "Permissão Negada",
+            description: "Precisamos de permissão para contar seus passos.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao verificar permissões:", error);
+        setHasPermission(false);
+      }
+    };
+    
+    checkPermissions();
+  }, [toast]);
+  
+  const handleToggleTracking = async () => {
+    if (isTracking) {
+      onStopTracking();
+    } else {
+      // Verificar permissões novamente se necessário
+      if (hasPermission === false) {
+        const permission = await healthService.requestPermissions();
+        setHasPermission(permission);
+        
+        if (!permission) {
+          toast({
+            title: "Permissão Negada",
+            description: "Precisamos de permissão para contar seus passos.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+      
+      onStartTracking();
+    }
+  };
   
   return (
     <Card className="w-full">
@@ -35,11 +87,12 @@ const StepCounter = ({ steps, isTracking, onStartTracking }: StepCounterProps) =
       </CardContent>
       <CardFooter className="flex justify-center">
         <Button 
-          onClick={onStartTracking} 
-          disabled={isTracking}
+          onClick={handleToggleTracking} 
+          disabled={hasPermission === false}
           className="w-full"
+          variant={isTracking ? "destructive" : "default"}
         >
-          {isTracking ? "Rastreando..." : "Iniciar Rastreamento"}
+          {isTracking ? "Parar Rastreamento" : "Iniciar Rastreamento"}
         </Button>
       </CardFooter>
     </Card>

@@ -13,104 +13,116 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
-import { Footprints, Flame, Timer, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Footprints, Flame, Trophy } from "lucide-react";
 import StepCounter from "@/components/steps/StepCounter";
 import StepMetrics from "@/components/steps/StepMetrics";
-
-// Mock data for the step tracker - in a real app, this would come from a database
-const initialStepData = [
-  { day: 'Segunda', steps: 5234, calories: 210 },
-  { day: 'Terça', steps: 7891, calories: 315 },
-  { day: 'Quarta', steps: 6453, calories: 258 },
-  { day: 'Quinta', steps: 9870, calories: 394 },
-  { day: 'Sexta', steps: 8765, calories: 350 },
-  { day: 'Sábado', steps: 4321, calories: 173 },
-  { day: 'Domingo', steps: 3567, calories: 143 },
-];
+import { healthService, HealthData, HistoricalHealthData } from "@/services/healthService";
 
 const StepTracker = () => {
   const { toast } = useToast();
-  const [stepData, setStepData] = useState(initialStepData);
-  const [todaySteps, setTodaySteps] = useState(0);
-  const [isTracking, setIsTracking] = useState(false);
   
-  useEffect(() => {
-    // In a real app, we would load the user's step data from a database here
-    console.log("StepTracker component mounted");
-    
-    // Simulating loading user data
-    setTimeout(() => {
+  // Estados para armazenar os dados de saúde
+  const [healthData, setHealthData] = useState<HealthData>({ steps: 0, calories: 0, distance: 0, activeMinutes: 0 });
+  const [historicalData, setHistoricalData] = useState<HistoricalHealthData[]>([]);
+  const [isTracking, setIsTracking] = useState(false);
+  const [averageSteps, setAverageSteps] = useState(0);
+  
+  // Função para carregar dados de saúde
+  const loadHealthData = async () => {
+    try {
+      const data = await healthService.getHealthData();
+      setHealthData(data);
+      
+      const history = await healthService.getHistoricalData();
+      setHistoricalData(history);
+      
+      // Calcula a média de passos
+      if (history.length > 0) {
+        const total = history.reduce((sum, day) => sum + day.steps, 0);
+        setAverageSteps(Math.floor(total / history.length));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados de saúde:", error);
       toast({
-        title: "Dados carregados",
-        description: "Seus dados de passos foram carregados com sucesso.",
+        title: "Erro",
+        description: "Não foi possível carregar seus dados de saúde.",
+        variant: "destructive"
       });
-    }, 1000);
+    }
+  };
+  
+  // Carrega dados ao iniciar
+  useEffect(() => {
+    loadHealthData();
+    
+    // Verifica se já estava rastreando
+    const alreadyTracking = healthService.isTracking();
+    setIsTracking(alreadyTracking);
+    
+    // Intervalo para atualizar dados periódicamente
+    const interval = setInterval(() => {
+      loadHealthData();
+    }, 5000);
     
     return () => {
-      console.log("StepTracker component unmounted");
+      clearInterval(interval);
+      // Não para o rastreamento ao desmontar para continuar em segundo plano
     };
   }, [toast]);
   
-  const handleStartTracking = () => {
-    setIsTracking(true);
-    toast({
-      title: "Rastreamento iniciado",
-      description: "Começamos a monitorar seus passos.",
-    });
-    
-    // Simulating steps being counted - in a real app this would use device sensors
-    const interval = setInterval(() => {
-      setTodaySteps(prev => {
-        const increment = Math.floor(Math.random() * 10) + 1;
-        return prev + increment;
-      });
-    }, 3000);
-    
-    // Clean up interval after 30 seconds
-    setTimeout(() => {
-      clearInterval(interval);
-      setIsTracking(false);
+  // Inicia o rastreamento de passos
+  const handleStartTracking = async () => {
+    try {
+      const success = await healthService.startTracking();
       
-      // Update the step data with today's result
-      setStepData(prev => {
-        const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long' });
-        const capitalizedToday = today.charAt(0).toUpperCase() + today.slice(1);
-        const newData = [...prev];
-        
-        // Find today in the data or add it
-        const todayIndex = newData.findIndex(item => 
-          item.day.toLowerCase() === capitalizedToday.toLowerCase()
-        );
-        
-        if (todayIndex >= 0) {
-          newData[todayIndex] = {
-            ...newData[todayIndex],
-            steps: todaySteps,
-            calories: Math.floor(todaySteps * 0.04), // Approximate calories burned
-          };
-        } else {
-          newData.push({
-            day: capitalizedToday,
-            steps: todaySteps,
-            calories: Math.floor(todaySteps * 0.04),
-          });
-        }
-        
-        return newData;
-      });
-      
+      if (success) {
+        setIsTracking(true);
+        toast({
+          title: "Rastreamento iniciado",
+          description: "Começamos a monitorar seus passos.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível iniciar o rastreamento.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar rastreamento:", error);
       toast({
-        title: "Rastreamento concluído",
-        description: `Você deu ${todaySteps} passos hoje!`,
+        title: "Erro",
+        description: "Ocorreu um erro ao iniciar o rastreamento.",
+        variant: "destructive"
       });
-    }, 30000);
+    }
   };
   
-  // Calculate total steps and calories
-  const totalSteps = stepData.reduce((sum, day) => sum + day.steps, 0);
-  const totalCalories = stepData.reduce((sum, day) => sum + day.calories, 0);
-  const averageSteps = Math.floor(totalSteps / stepData.length);
+  // Para o rastreamento de passos
+  const handleStopTracking = () => {
+    healthService.stopTracking();
+    setIsTracking(false);
+    
+    toast({
+      title: "Rastreamento parado",
+      description: "Paramos de monitorar seus passos.",
+    });
+    
+    // Atualiza os dados uma última vez
+    loadHealthData();
+  };
+  
+  // Prepara dados para o gráfico
+  const chartData = historicalData.map(day => {
+    const date = new Date(day.date);
+    const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+    
+    return {
+      day: dayName,
+      steps: day.steps,
+      calories: day.calories
+    };
+  });
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -122,15 +134,15 @@ const StepTracker = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <StepCounter 
-              steps={todaySteps} 
+              steps={healthData.steps} 
               isTracking={isTracking} 
               onStartTracking={handleStartTracking} 
+              onStopTracking={handleStopTracking}
             />
             
             <StepMetrics 
-              totalSteps={totalSteps} 
-              averageSteps={averageSteps} 
-              totalCalories={totalCalories} 
+              healthData={healthData}
+              averageSteps={averageSteps}
             />
           </div>
           
@@ -142,7 +154,7 @@ const StepTracker = () => {
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={stepData}
+                    data={chartData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -188,22 +200,28 @@ const StepTracker = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {stepData.map((day, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-3 px-4">{day.day}</td>
-                        <td className="py-3 px-4">{day.steps.toLocaleString('pt-BR')}</td>
-                        <td className="py-3 px-4">{day.calories}</td>
-                        <td className="py-3 px-4">
-                          {day.steps >= 8000 ? (
-                            <span className="inline-flex items-center text-green-600">
-                              <Trophy className="h-4 w-4 mr-1" /> Sim
-                            </span>
-                          ) : (
-                            <span className="text-red-500">Não</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {historicalData.map((day, index) => {
+                      const date = new Date(day.date);
+                      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+                      const formattedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                      
+                      return (
+                        <tr key={index} className="border-b">
+                          <td className="py-3 px-4">{formattedDay}</td>
+                          <td className="py-3 px-4">{day.steps.toLocaleString('pt-BR')}</td>
+                          <td className="py-3 px-4">{day.calories}</td>
+                          <td className="py-3 px-4">
+                            {day.steps >= 8000 ? (
+                              <span className="inline-flex items-center text-green-600">
+                                <Trophy className="h-4 w-4 mr-1" /> Sim
+                              </span>
+                            ) : (
+                              <span className="text-red-500">Não</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
