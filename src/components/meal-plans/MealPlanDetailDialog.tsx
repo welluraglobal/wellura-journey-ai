@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ShoppingCart, RefreshCw } from "lucide-react";
+import { Check, ShoppingCart, RefreshCw, Award } from "lucide-react";
 
 type Meal = {
   id: string;
@@ -37,6 +37,7 @@ type MealPlan = {
   protein: number;
   carbs: number;
   fat: number;
+  isPersonalized?: boolean;
 };
 
 interface MealPlanDetailDialogProps {
@@ -98,7 +99,15 @@ const MealPlanDetailDialog: React.FC<MealPlanDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{plan.name} - Detailed Information</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {plan.name} 
+            {plan.isPersonalized && (
+              <Badge variant="outline" className="ml-2 bg-primary/10">
+                <Award className="h-3.5 w-3.5 mr-1 text-primary" />
+                Quiz-Based
+              </Badge>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

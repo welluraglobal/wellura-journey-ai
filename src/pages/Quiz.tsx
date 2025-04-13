@@ -14,6 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Check, Printer, Mail, ArrowRight, ArrowLeft, RefreshCw } from "lucide-react";
 import { getQuizQuestions, getRecommendations, healthGoals } from "@/utils/quizUtils";
+import { 
+  calculateBodyComposition, 
+  generateMealPlan, 
+  generateTrainingPlan, 
+  generateSupplementRecommendations,
+  savePlansToProfile
+} from "@/utils/planGenerators";
 
 const Quiz = () => {
   const { userId, userProfile, setUserProfile } = useContext(UserContext);
@@ -27,6 +34,7 @@ const Quiz = () => {
   const [hasCompletedQuiz, setHasCompletedQuiz] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<Record<string, string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isGeneratingPlans, setIsGeneratingPlans] = useState<boolean>(false);
 
   // Check if user has already completed the quiz
   useEffect(() => {
@@ -60,7 +68,10 @@ const Quiz = () => {
       } else {
         // Limit to 3 selections
         if (prev.length >= 3) {
-          toast.warning("You can select up to 3 goals only");
+          toast({
+            title: "Maximum Goals Reached",
+            description: "You can select up to 3 health goals",
+          });
           return prev;
         }
         return [...prev, goal];
@@ -78,7 +89,11 @@ const Quiz = () => {
   const handleNextStep = () => {
     if (quizStep === 0) {
       if (selectedGoals.length === 0) {
-        toast.error("Please select at least one health goal");
+        toast({
+          title: "Please Select a Goal",
+          description: "Please select at least one health goal",
+          variant: "destructive",
+        });
         return;
       }
       setQuizStep(1);
@@ -88,7 +103,11 @@ const Quiz = () => {
       const allAnswered = currentGoalQuestions.every(q => quizAnswers[q.id] !== undefined);
       
       if (!allAnswered) {
-        toast.error("Please answer all questions before proceeding");
+        toast({
+          title: "Please Complete This Step",
+          description: "Please answer all questions before proceeding",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -117,7 +136,11 @@ const Quiz = () => {
     
     try {
       if (!userId) {
-        toast.error("You must be logged in to save your quiz results");
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to save your quiz results",
+          variant: "destructive",
+        });
         setIsSubmitting(false);
         return;
       }
@@ -148,13 +171,71 @@ const Quiz = () => {
         setUserProfile(updatedProfile);
       }
       
-      toast.success("Your wellness quiz results have been saved!");
+      toast({
+        title: "Success",
+        description: "Your wellness quiz results have been saved!",
+      });
       setHasCompletedQuiz(true);
+      
+      // Generate plans after saving quiz data
+      generatePlans(quizData);
+      
     } catch (error) {
       console.error("Error saving quiz data:", error);
-      toast.error("Failed to save your quiz results. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to save your quiz results. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const generatePlans = async (quizData: any) => {
+    setIsGeneratingPlans(true);
+    
+    try {
+      // Generate meal plan
+      const mealPlan = generateMealPlan(quizData, userProfile);
+      
+      // Generate training plan
+      const trainingPlan = generateTrainingPlan(quizData, userProfile);
+      
+      // Calculate body composition
+      const bodyComposition = calculateBodyComposition(quizData);
+      
+      // Generate supplement recommendations
+      const supplementRecommendations = generateSupplementRecommendations(quizData);
+      
+      // Save generated plans to database
+      if (userId) {
+        const saved = await savePlansToProfile(userId, quizData, {
+          mealPlan,
+          trainingPlan,
+          bodyComposition,
+          supplementRecommendations
+        });
+        
+        if (saved) {
+          toast({
+            title: "Plans Generated",
+            description: "Your personalized plans have been created based on your quiz responses",
+          });
+          
+          // Navigate to results page
+          navigate("/quiz-results");
+        }
+      }
+    } catch (error) {
+      console.error("Error generating plans:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate personalized plans. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPlans(false);
     }
   };
 
@@ -169,7 +250,11 @@ const Quiz = () => {
   const printReport = () => {
     const reportWindow = window.open('', '_blank');
     if (!reportWindow) {
-      toast.error("Pop-up blocked. Please allow pop-ups to print the report.");
+      toast({
+        title: "Pop-up Blocked",
+        description: "Please allow pop-ups to print the report.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -220,7 +305,10 @@ const Quiz = () => {
 
   const sendEmailReport = () => {
     // In a real implementation, this would send an email with the report
-    toast.success("Email feature will be implemented in the next version");
+    toast({
+      title: "Coming Soon",
+      description: "Email feature will be implemented in the next version",
+    });
   };
 
   const renderCurrentStep = () => {
@@ -240,7 +328,7 @@ const Quiz = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedGoals.map(goal => (
                   <div key={goal} className="flex items-center space-x-2 bg-secondary/50 p-3 rounded-md">
-                    <Check className="h-5 w-5 text-wellura-500" />
+                    <Check className="h-5 w-5 text-primary" />
                     <span>{goal}</span>
                   </div>
                 ))}
@@ -250,7 +338,7 @@ const Quiz = () => {
                 <h3 className="text-lg font-semibold mb-3">Your Wellness Report:</h3>
                 {selectedGoals.map(goal => (
                   <div key={goal} className="mb-4">
-                    <h4 className="font-medium text-wellura-500">{goal}</h4>
+                    <h4 className="font-medium text-primary">{goal}</h4>
                     <ul className="list-disc pl-5 space-y-1 mt-2">
                       {recommendations[goal]?.map((rec, index) => (
                         <li key={index}>{rec}</li>
@@ -263,6 +351,9 @@ const Quiz = () => {
           </CardContent>
           <CardFooter className="flex-col space-y-3">
             <div className="flex flex-wrap gap-3 w-full">
+              <Button variant="outline" onClick={() => navigate("/quiz-results")} className="flex-1">
+                View Detailed Results
+              </Button>
               <Button variant="outline" onClick={printReport} className="flex-1">
                 <Printer className="mr-2 h-4 w-4" />
                 Print Report
@@ -409,7 +500,7 @@ const Quiz = () => {
             <div className="space-y-6">
               {selectedGoals.map(goal => (
                 <div key={goal} className="space-y-3">
-                  <h3 className="text-lg font-medium text-wellura-500">{goal} Recommendations</h3>
+                  <h3 className="text-lg font-medium text-primary">{goal} Recommendations</h3>
                   <div className="bg-secondary/30 p-4 rounded-md">
                     <ul className="list-disc pl-5 space-y-2">
                       {recommendations[goal]?.map((rec, index) => (
@@ -436,8 +527,12 @@ const Quiz = () => {
                 Email Report
               </Button>
             </div>
-            <Button onClick={saveQuizData} disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Saving..." : "Save Results"}
+            <Button 
+              onClick={saveQuizData} 
+              disabled={isSubmitting || isGeneratingPlans} 
+              className="w-full"
+            >
+              {isSubmitting ? "Saving..." : isGeneratingPlans ? "Generating Plans..." : "Save Results & Generate Plans"}
             </Button>
           </CardFooter>
         </Card>

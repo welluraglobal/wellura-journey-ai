@@ -8,6 +8,7 @@ import Auth from "@/pages/Auth";
 import ConfirmEmail from "@/pages/ConfirmEmail";
 import ResetPassword from "@/pages/ResetPassword";
 import Quiz from "@/pages/Quiz";
+import QuizResults from "@/pages/QuizResults";
 import ProfileSetup from "@/pages/ProfileSetup";
 import NotFound from "@/pages/NotFound";
 import Chat from "@/pages/Chat";
@@ -65,6 +66,7 @@ function AppContent() {
             <Route path="/profile-setup" element={isLoggedIn ? <ProfileSetup /> : <Navigate to="/auth" replace />} />
             <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/auth" replace />} />
             <Route path="/quiz" element={isLoggedIn ? <Quiz /> : <Navigate to="/auth" replace />} />
+            <Route path="/quiz-results" element={isLoggedIn ? <QuizResults /> : <Navigate to="/auth" replace />} />
             <Route path="/chat" element={isLoggedIn ? <Chat /> : <Navigate to="/auth" replace />} />
             <Route path="/nearby-gyms" element={isLoggedIn ? <NearbyGyms /> : <Navigate to="/auth" replace />} />
             <Route path="/find-professionals" element={isLoggedIn ? <FindProfessionals /> : <Navigate to="/auth" replace />} />

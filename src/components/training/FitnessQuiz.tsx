@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, ArrowLeft, Dumbbell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UserContext } from "@/contexts/UserContext";
 
 type QuizAnswer = {
   fitnessLevel: string;
@@ -30,9 +31,88 @@ interface FitnessQuizProps {
 }
 
 const FitnessQuiz: React.FC<FitnessQuizProps> = ({ onComplete, onCancel }) => {
+  const { userProfile } = useContext(UserContext);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer>(defaultAnswers);
   const { toast } = useToast();
+  const [hasPrefilledAnswers, setHasPrefilledAnswers] = useState(false);
+
+  // Check if user has quiz data and prefill answers
+  useEffect(() => {
+    // Only prefill once and if there's quiz data
+    if (!hasPrefilledAnswers && userProfile?.quiz_data) {
+      const quizData = userProfile.quiz_data;
+      const newAnswers = { ...defaultAnswers };
+      
+      // Map wellness quiz answers to fitness quiz answers
+      if (quizData.answers) {
+        // Map fitness level from quiz_data
+        if (quizData.answers["weight-exercise"]) {
+          const exerciseFrequency = quizData.answers["weight-exercise"];
+          if (exerciseFrequency === "None") {
+            newAnswers.fitnessLevel = "beginner";
+          } else if (exerciseFrequency === "1-2 times") {
+            newAnswers.fitnessLevel = "beginner";
+          } else if (exerciseFrequency === "3-4 times") {
+            newAnswers.fitnessLevel = "intermediate";
+          } else if (exerciseFrequency === "5+ times") {
+            newAnswers.fitnessLevel = "advanced";
+          }
+        }
+        
+        // Map preferred workout time if available
+        if (quizData.answers["preferredWorkoutTime"]) {
+          newAnswers.preferredWorkoutTime = quizData.answers["preferredWorkoutTime"];
+        }
+        
+        // Map workout duration
+        if (quizData.answers["workoutDuration"]) {
+          newAnswers.workoutDuration = quizData.answers["workoutDuration"];
+        }
+        
+        // Map injuries
+        if (quizData.answers["previousInjuries"]) {
+          newAnswers.previousInjuries = quizData.answers["previousInjuries"];
+        }
+      }
+      
+      // Map fitness goals from wellness goals
+      if (quizData.goals) {
+        const goalMapping: Record<string, string> = {
+          "Lose Weight": "lose-weight",
+          "Build Muscle": "build-muscle",
+          "Improve Focus": "improve-flexibility",
+          "Boost Energy": "increase-endurance",
+        };
+        
+        const mappedGoals = quizData.goals
+          .map(goal => goalMapping[goal])
+          .filter(Boolean);
+        
+        if (mappedGoals.length > 0) {
+          newAnswers.fitnessGoals = mappedGoals;
+        }
+        
+        // Always add overall-fitness if not already there
+        if (!newAnswers.fitnessGoals.includes("overall-fitness")) {
+          newAnswers.fitnessGoals.push("overall-fitness");
+        }
+      }
+      
+      setAnswers(newAnswers);
+      setHasPrefilledAnswers(true);
+      
+      if (Object.values(newAnswers).some(value => {
+        if (Array.isArray(value)) return value.length > 0;
+        return value !== "" && value !== "none";
+      })) {
+        toast({
+          title: "Quiz Pre-filled",
+          description: "We've pre-filled some answers based on your wellness quiz responses"
+        });
+      }
+    }
+  }, [userProfile, hasPrefilledAnswers, toast]);
 
   const steps = [
     {
