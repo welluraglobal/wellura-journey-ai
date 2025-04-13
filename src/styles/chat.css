@@ -1,3 +1,4 @@
+
 /* Chat bubbles */
 .chat-bubble {
   max-width: 80%;
@@ -59,4 +60,14 @@
 /* Add video mirror mode for selfie camera */
 .mirror-mode {
   transform: scaleX(-1);
+}
+
+/* Canvas overlay styles for pose detection */
+.pose-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
