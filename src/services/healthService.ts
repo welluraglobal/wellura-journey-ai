@@ -193,22 +193,22 @@ export class HealthService {
     const historicalData = this.mockHistoricalData;
 
     const chatMessage = `
-Dados de Atividade Física da Última Semana:
+Health Activity Data from Last Week:
 
-📊 Resumo Semanal:
-- Passos Totais: ${currentData.steps.toLocaleString('pt-BR')}
-- Calorias Queimadas: ${currentData.calories.toLocaleString('pt-BR')}
-- Distância Percorrida: ${currentData.distance.toFixed(2)} km
-- Tempo Ativo: ${currentData.activeMinutes} minutos
+📊 Weekly Summary:
+- Total Steps: ${currentData.steps.toLocaleString('en-US')}
+- Calories Burned: ${currentData.calories.toLocaleString('en-US')}
+- Distance Traveled: ${currentData.distance.toFixed(2)} km
+- Active Time: ${currentData.activeMinutes} minutes
 
-📅 Histórico Diário de Passos:
+📅 Daily Step History:
 ${historicalData.map((day, index) => `
-${index === historicalData.length - 1 ? '📍 Hoje' : `Dia ${index + 1}`}: 
-  - Passos: ${day.steps.toLocaleString('pt-BR')}
-  - Calorias: ${day.calories.toLocaleString('pt-BR')}
+${index === historicalData.length - 1 ? '📍 Today' : `Day ${index + 1}`}: 
+  - Steps: ${day.steps.toLocaleString('en-US')}
+  - Calories: ${day.calories.toLocaleString('en-US')}
 `).join('\n')}
 
-💡 Avaliação Rápida:
+💡 Quick Assessment:
 ${this.generateHealthInsights(currentData, historicalData)}
 `;
 
@@ -221,11 +221,11 @@ ${this.generateHealthInsights(currentData, historicalData)}
     const goalSteps = 10000;
 
     if (currentData.steps < goalSteps * 0.5) {
-      return "Você está com um nível de atividade baixo. Tente aumentar seus passos diários, começando com caminhadas curtas.";
+      return "You are at a low activity level. Try increasing your daily steps, starting with short walks.";
     } else if (currentData.steps < goalSteps) {
-      return "Você está no caminho certo! Continue aumentando gradualmente sua atividade física.";
+      return "You are on the right track! Continue gradually increasing your physical activity.";
     } else {
-      return "Excelente trabalho! Você está atingindo metas de atividade física recomendadas.";
+      return "Excellent work! You are meeting recommended physical activity goals.";
     }
   }
 }
