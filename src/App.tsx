@@ -1,7 +1,8 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Auth from "@/pages/Auth";
@@ -22,7 +23,6 @@ import MealPlans from "@/pages/MealPlans";
 import Training from "@/pages/Training";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
-import { useEffect } from "react";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,96 +39,158 @@ function AppWrapper() {
   return (
     <AuthProvider>
       <UserProvider>
-        <AppContent />
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </QueryClientProvider>
       </UserProvider>
     </AuthProvider>
   );
 }
 
-// Main app content with authentication check
-function AppContent() {
+// Protected route component
+function ProtectedRoute({ 
+  children, 
+  requireAuth = true, 
+  requireTermsAccepted = false 
+}: { 
+  children: React.ReactNode,
+  requireAuth?: boolean,
+  requireTermsAccepted?: boolean
+}) {
   const { authState } = useAuth();
   const { userProfile } = useUser();
+  const location = useLocation();
   const isLoggedIn = authState.isAuthenticated;
   const hasAcceptedDisclaimer = userProfile?.health_disclaimer_accepted;
 
+  // Skip navigation checks when already at certain pages
+  const isAtConfirmationScreen = location.pathname === "/confirmation";
+  const isAtAuthScreen = location.pathname === "/auth";
+
+  if (requireAuth && !isLoggedIn) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (requireAuth && requireTermsAccepted && !hasAcceptedDisclaimer) {
+    if (!isAtConfirmationScreen) {
+      return <Navigate to="/confirmation" replace />;
+    }
+  }
+
+  if (!requireAuth && isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Main app content with more efficient authentication check
+function AppContent() {
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   useEffect(() => {
     console.log("App component rendered");
+    setIsInitialized(true);
   }, []);
   
+  if (!isInitialized) {
+    return <div>Loading...</div>;
+  }
+  
   return (
-    <div>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          {/* Use only one toast provider */}
-          <Toaster />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={!isLoggedIn ? <Auth /> : <Navigate to="/dashboard" replace />} />
-            <Route path="/confirm-email" element={<ConfirmationEmail />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/terms-and-privacy" element={<TermsAndPrivacy />} />
-            <Route path="/confirmation" element={
-              isLoggedIn && !hasAcceptedDisclaimer 
-                ? <ConfirmationScreen /> 
-                : <Navigate to={isLoggedIn ? "/dashboard" : "/auth"} replace />
-            } />
-            <Route path="/profile-setup" element={isLoggedIn ? <ProfileSetup /> : <Navigate to="/auth" replace />} />
-            <Route path="/dashboard" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <Dashboard /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/quiz" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <Quiz /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/quiz-results" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <QuizResults /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/chat" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <Chat /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/nearby-gyms" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <NearbyGyms /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/find-professionals" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <FindProfessionals /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/plan-generator" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <PlanGenerator /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/step-tracker" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <StepTracker /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/meals" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <MealPlans /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="/training" element={
-              isLoggedIn 
-                ? (hasAcceptedDisclaimer ? <Training /> : <Navigate to="/confirmation" replace />)
-                : <Navigate to="/auth" replace />
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </div>
+    <>
+      {/* Use only one toast provider */}
+      <Toaster />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        
+        <Route path="/auth" element={
+          <ProtectedRoute requireAuth={false}>
+            <Auth />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/confirm-email" element={<ConfirmationEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/terms-and-privacy" element={<TermsAndPrivacy />} />
+        
+        <Route path="/confirmation" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={false}>
+            <ConfirmationScreen />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profile-setup" element={
+          <ProtectedRoute requireAuth={true}>
+            <ProfileSetup />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/dashboard" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/quiz" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <Quiz />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/quiz-results" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <QuizResults />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/chat" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <Chat />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/nearby-gyms" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <NearbyGyms />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/find-professionals" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <FindProfessionals />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/plan-generator" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <PlanGenerator />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/step-tracker" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <StepTracker />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/meals" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <MealPlans />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/training" element={
+          <ProtectedRoute requireAuth={true} requireTermsAccepted={true}>
+            <Training />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 

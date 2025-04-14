@@ -1,5 +1,5 @@
 
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { UserContext } from "@/contexts/UserContext";
@@ -22,13 +22,6 @@ const ConfirmationScreens = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { userId, setUserProfile, userProfile } = useContext(UserContext);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if user has already accepted the terms
-    if (userProfile && userProfile.privacy_accepted && userProfile.health_disclaimer_accepted) {
-      navigate("/dashboard");
-    }
-  }, [userProfile, navigate]);
 
   const handlePrivacyAccept = () => {
     setCurrentStep("health");
@@ -62,7 +55,7 @@ const ConfirmationScreens = () => {
       });
       
       setCurrentStep("completed");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error: any) {
       console.error("Error updating acceptance status:", error);
       toast({

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,13 +21,6 @@ const ConfirmationScreen = () => {
   const { authState } = useAuth();
   const { userId, setUserProfile, userProfile } = useUser();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if user has already accepted the terms
-    if (userProfile && userProfile.health_disclaimer_accepted) {
-      navigate("/dashboard");
-    }
-  }, [userProfile, navigate]);
 
   const handleAccept = async () => {
     if (!userId) return;
@@ -54,7 +47,7 @@ const ConfirmationScreen = () => {
         description: "Thank you for accepting our terms.",
       });
       
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error: any) {
       console.error("Error updating acceptance status:", error);
       toast({
