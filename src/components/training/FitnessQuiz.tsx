@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,11 +156,11 @@ const FitnessQuiz: React.FC<FitnessQuizProps> = ({ onComplete, onCancel, initial
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="waistCircumference">Waist Circumference (cm)</Label>
+              <Label htmlFor="waistCircumference">Waist Circumference (cm) <span className="text-muted-foreground">(Optional)</span></Label>
               <Input
                 id="waistCircumference"
                 type="number"
-                placeholder="Waist measurement in cm"
+                placeholder="Your waist measurement in cm (optional)"
                 value={answers.waistCircumference}
                 onChange={(e) => handleChange("waistCircumference", e.target.value)}
               />
@@ -194,7 +193,7 @@ const FitnessQuiz: React.FC<FitnessQuizProps> = ({ onComplete, onCancel, initial
         </div>
       ),
       isValid: () => {
-        // Check if all personal metrics are filled
+        // Remove waistCircumference from required fields
         const requiredFields = ['age', 'gender', 'height', 'currentWeight', 'targetWeight'];
         return requiredFields.every(field => !!answers[field as keyof QuizAnswer]);
       },
@@ -780,49 +779,4 @@ const FitnessQuiz: React.FC<FitnessQuizProps> = ({ onComplete, onCancel, initial
   const currentStepData = steps[currentStep];
   
   // Calculate progress percentage
-  const progressPercentage = Math.round(((currentStep + 1) / steps.length) * 100);
-
-  // Get category icon
-  const getCategoryIcon = () => {
-    switch (stepCategory) {
-      case 'personal':
-        return <ActivitySquare className="mr-2 h-5 w-5 text-primary" />;
-      case 'fitness':
-        return <Dumbbell className="mr-2 h-5 w-5 text-primary" />;
-      case 'nutrition':
-        return <Apple className="mr-2 h-5 w-5 text-primary" />;
-      case 'lifestyle':
-        return <Pill className="mr-2 h-5 w-5 text-primary" />;
-      default:
-        return <Dumbbell className="mr-2 h-5 w-5 text-primary" />;
-    }
-  };
-
-  return (
-    <Card className="w-full">
-      <CardHeader className="relative">
-        <div className="absolute top-4 right-4 flex items-center text-muted-foreground text-sm">
-          Step {currentStep + 1} of {steps.length} ({progressPercentage}%)
-        </div>
-        <CardTitle className="flex items-center text-xl">
-          {getCategoryIcon()}
-          {currentStepData.title}
-        </CardTitle>
-        <CardDescription>{currentStepData.description}</CardDescription>
-      </CardHeader>
-      <CardContent>{currentStepData.content}</CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={goToPreviousStep}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {currentStep === 0 ? "Cancel" : "Back"}
-        </Button>
-        <Button onClick={goToNextStep}>
-          {currentStep === steps.length - 1 ? "Complete" : "Next"}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
-
-export default FitnessQuiz;
+  const progressPercentage = Math.round
