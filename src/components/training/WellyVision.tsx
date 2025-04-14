@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Volume2, Volume1, CheckCircle2 } from "lucide-react";
@@ -5,9 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useDeviceSize, useOrientation } from "@/hooks/use-mobile";
 import WelluraPlaylistButton from "./WelluraPlaylistButton";
 import { useUser } from "@/contexts/UserContext";
+import { 
+  ToggleGroup, 
+  ToggleGroupItem 
+} from "@/components/ui/toggle-group";
 
 // Define the specific exercise types we support
 type ExerciseType = "Squat" | "Bicep Curl" | "Push-up" | "Plank" | "Shoulder Press";
+type VoiceMode = "motivational" | "strict" | "minimal";
 
 interface WellyVisionProps {
   exerciseName: string;
@@ -24,7 +30,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
 }) => {
   const [isActive, setIsActive] = useState(false);
   const [repCount, setRepCount] = useState(0);
-  const [feedbackMode, setFeedbackMode] = useState<"motivational" | "technical">("motivational");
+  const [feedbackMode, setFeedbackMode] = useState<VoiceMode>("motivational");
   const [language, setLanguage] = useState<"en" | "pt-br">("pt-br");
   const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
   const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
@@ -41,6 +47,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const [exerciseProgress, setExerciseProgress] = useState(0);
   const [keypoints, setKeypoints] = useState<any>(null);
   const [lastExerciseTime, setLastExerciseTime] = useState(0);
+  const [lastRepCompletedTime, setLastRepCompletedTime] = useState(0);
+  const [formQuality, setFormQuality] = useState<"good" | "bad" | "neutral">("neutral");
+  const [exerciseSpeed, setExerciseSpeed] = useState<"fast" | "slow" | "good">("good");
+  const [motionBuffer, setMotionBuffer] = useState<number[]>([]);
   
   useEffect(() => {
     if (isActive && videoRef.current) {
@@ -84,10 +94,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     if (language === "pt-br") {
       welcomeText = `Bem-vindo, ${userName}. Este exercício é chamado ${exerciseName}. Eu vou te ajudar a executar com perfeição para que você tenha resultados reais. Vamos nessa!`;
     } else {
-      welcomeText = `Welcome, ${userName}. This exercise is called ${exerciseName}. I'll guide you to perform it correctly for real results. Let's do this!`;
+      welcomeText = `Welcome, ${userName}. We're starting the exercise: ${exerciseName}. I will guide your form to help you get the best results.`;
     }
     
     playFeedback(welcomeText);
+    setHasPlayedIntro(true);
   };
   
   const initCamera = async () => {
@@ -108,10 +119,10 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           description: "Welly is now watching your form!",
         });
         
+        // Play welcome message immediately after camera activation
         if (!hasPlayedIntro) {
           setTimeout(() => {
             playWelcomeMessage();
-            setHasPlayedIntro(true);
           }, 500);
         }
         
@@ -139,7 +150,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
     
-    let motionBuffer: number[] = [];
+    let initialBuffer: number[] = [];
     const bufferSize = 10;
     
     const detectPose = () => {
@@ -278,12 +289,17 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       
       const normalizedMotionValue = totalMotionValue / trackingRegions.length;
       
-      motionBuffer.push(normalizedMotionValue);
-      if (motionBuffer.length > bufferSize) {
-        motionBuffer.shift();
+      // Update motion buffer for analysis
+      const newBuffer = [...motionBuffer, normalizedMotionValue];
+      if (newBuffer.length > bufferSize) {
+        newBuffer.shift();
       }
+      setMotionBuffer(newBuffer);
       
-      const motionTrend = calculateMotionTrend(motionBuffer);
+      const motionTrend = calculateMotionTrend(newBuffer);
+      
+      // Analyze form based on motion trend
+      analyzeFormQuality(motionTrend, exerciseName);
       
       ctx.font = '16px Arial';
       ctx.fillStyle = 'white';
@@ -296,10 +312,78 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       
       detectExerciseRep(exerciseName, motionTrend, exerciseThreshold, now);
       
+      // Provide real-time feedback based on form analysis
+      provideRealtimeFeedback(now);
+      
       animationRef.current = requestAnimationFrame(detectPose);
     };
     
     animationRef.current = requestAnimationFrame(detectPose);
+  };
+  
+  const analyzeFormQuality = (motionTrend: number, exercise: string) => {
+    const threshold = getExerciseThreshold(exercise);
+    
+    // Determine if the motion is too fast based on motion trend
+    if (Math.abs(motionTrend) > threshold * 1.5) {
+      setExerciseSpeed("fast");
+    } else if (Math.abs(motionTrend) < threshold * 0.5 && Math.abs(motionTrend) > 0.5) {
+      setExerciseSpeed("slow");
+    } else {
+      setExerciseSpeed("good");
+    }
+    
+    // Determine form quality based on motion pattern
+    if (motionBuffer.length > 5) {
+      const variance = calculateVariance(motionBuffer);
+      
+      if (variance > threshold * 0.8) {
+        setFormQuality("bad"); // Inconsistent motion indicates bad form
+      } else if (
+        (exercise === "Squat" || exercise === "Push-up") && 
+        Math.max(...motionBuffer) - Math.min(...motionBuffer) < threshold * 0.7
+      ) {
+        setFormQuality("bad"); // Not enough range of motion
+      } else {
+        setFormQuality("good");
+      }
+    }
+  };
+  
+  const calculateVariance = (arr: number[]) => {
+    if (arr.length <= 1) return 0;
+    const mean = arr.reduce((sum, val) => sum + val, 0) / arr.length;
+    const squaredDiffs = arr.map(val => Math.pow(val - mean, 2));
+    return Math.sqrt(squaredDiffs.reduce((sum, val) => sum + val, 0) / arr.length);
+  };
+  
+  const provideRealtimeFeedback = (now: number) => {
+    // Only provide feedback if enough time has passed since last feedback
+    if (now - lastFeedbackTime < 3000) return;
+    
+    if (feedbackMode === "minimal" && formQuality === "good") {
+      return; // Minimal mode doesn't give feedback for good form
+    }
+    
+    if (exerciseSpeed === "fast") {
+      playFeedback("Slow down. Control your movement.");
+      setLastFeedbackTime(now);
+      return;
+    }
+    
+    if (formQuality === "bad") {
+      const rangeMessage = "Try to go deeper to activate the full muscle.";
+      const formMessage = "Watch your form. Keep your core tight.";
+      playFeedback(Math.random() > 0.5 ? rangeMessage : formMessage);
+      setLastFeedbackTime(now);
+      return;
+    }
+    
+    if (formQuality === "good" && feedbackMode !== "minimal") {
+      playFeedback("Great form! Keep it up.");
+      setLastFeedbackTime(now);
+      return;
+    }
   };
   
   const detectMotionInRegion = (imageData: ImageData, width: number, height: number, exercise: string): number => {
@@ -367,6 +451,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
                   setLastExerciseTime(now);
                   setRepCount(prev => {
                     const newCount = prev + 1;
+                    celebrateRepCompletion();
                     provideFeedback(newCount, targetReps);
                     return newCount;
                   });
@@ -397,6 +482,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
                   setLastExerciseTime(now);
                   setRepCount(prev => {
                     const newCount = prev + 1;
+                    celebrateRepCompletion();
                     provideFeedback(newCount, targetReps);
                     return newCount;
                   });
@@ -427,6 +513,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
                   setLastExerciseTime(now);
                   setRepCount(prev => {
                     const newCount = prev + 1;
+                    celebrateRepCompletion();
                     provideFeedback(newCount, targetReps);
                     return newCount;
                   });
@@ -472,6 +559,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
                   setLastExerciseTime(now);
                   setRepCount(prev => {
                     const newCount = prev + 1;
+                    celebrateRepCompletion();
                     provideFeedback(newCount, targetReps);
                     return newCount;
                   });
@@ -502,6 +590,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
                   setLastExerciseTime(now);
                   setRepCount(prev => {
                     const newCount = prev + 1;
+                    celebrateRepCompletion();
                     provideFeedback(newCount, targetReps);
                     return newCount;
                   });
@@ -513,6 +602,22 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           }
         }
     }
+  };
+  
+  const celebrateRepCompletion = () => {
+    const now = Date.now();
+    if (now - lastRepCompletedTime < 1500) return;
+    
+    const celebrationPhrases = [
+      "Nice rep!",
+      "Let's go!",
+      "Stay focused, you're doing great!",
+      "That's it! Keep pushing."
+    ];
+    
+    const randomPhrase = celebrationPhrases[Math.floor(Math.random() * celebrationPhrases.length)];
+    playFeedback(randomPhrase);
+    setLastRepCompletedTime(now);
   };
   
   const calculateMotionTrend = (buffer: number[]) => {
@@ -604,6 +709,62 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         ];
         return finalPhrases[Math.floor(Math.random() * finalPhrases.length)];
       }
+    }
+  };
+  
+  const getStrictCoachPhrase = (): string => {
+    if (language === "pt-br") {
+      const phrases = [
+        "Mais profundo, não está bom o suficiente!",
+        "Não está dando o seu máximo!",
+        "Concentração, sua forma está péssima!",
+        "Isso não é nem metade do que você pode fazer!",
+        "Quer resultado? Então se esforça mais!",
+        "Não vim aqui para ver você desistir!",
+        "Seu corpo só muda quando dói!",
+        "Pare de reclamar e continue!"
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    } else {
+      const phrases = [
+        "Deeper! That's not good enough!",
+        "You're not giving your maximum effort!",
+        "Focus! Your form is terrible!",
+        "That's not even half of what you can do!",
+        "Want results? Then work harder!",
+        "I didn't come here to watch you quit!",
+        "Your body only changes when it hurts!",
+        "Stop complaining and keep going!"
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    }
+  };
+  
+  const getCalmPhrase = (): string => {
+    if (language === "pt-br") {
+      const phrases = [
+        "Respire e mantenha o foco",
+        "Continue no seu ritmo",
+        "Movimentos controlados são melhores",
+        "Qualidade sobre quantidade",
+        "Mantenha a concentração",
+        "Respire fundo, você está indo bem",
+        "Cada repetição conta",
+        "Sinta os músculos trabalhando"
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
+    } else {
+      const phrases = [
+        "Breathe and stay focused",
+        "Keep your own pace",
+        "Controlled movements are better",
+        "Quality over quantity",
+        "Stay present and focused",
+        "Breathe deeply, you're doing well",
+        "Each rep counts",
+        "Feel your muscles working"
+      ];
+      return phrases[Math.floor(Math.random() * phrases.length)];
     }
   };
   
@@ -819,10 +980,19 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     
     let feedback = "";
     
-    if (feedbackMode === "motivational") {
-      feedback = getMotivationalPhrase(currentRep, targetReps);
-    } else {
-      feedback = getTechnicalPhrase();
+    // Get different feedback based on selected mode
+    switch(feedbackMode) {
+      case "motivational":
+        feedback = getMotivationalPhrase(currentRep, targetReps);
+        break;
+      case "strict":
+        feedback = getStrictCoachPhrase();
+        break;
+      case "minimal":
+        feedback = getCalmPhrase();
+        break;
+      default:
+        feedback = getTechnicalPhrase();
     }
     
     playFeedback(feedback);
@@ -831,6 +1001,9 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   
   const playFeedback = (text: string) => {
     if ('speechSynthesis' in window) {
+      // Cancel any current speech to avoid overlap
+      window.speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(text);
       
       const voices = window.speechSynthesis.getVoices();
@@ -849,7 +1022,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         utterance.lang = "en-US";
       }
       
-      utterance.rate = 1.05;
+      utterance.rate = 1.0;
       utterance.pitch = 1.1;
       utterance.volume = 1;
       
@@ -857,11 +1030,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     }
   };
   
-  const toggleFeedbackMode = () => {
-    setFeedbackMode(prev => prev === "motivational" ? "technical" : "motivational");
+  const toggleVoiceMode = (value: string) => {
+    setFeedbackMode(value as VoiceMode);
     toast({
-      title: "Feedback Mode Changed",
-      description: `Switched to ${feedbackMode === "motivational" ? "technical" : "motivational"} feedback mode`,
+      title: "Voice Mode Changed",
+      description: `Switched to ${value} feedback mode`,
     });
   };
   
@@ -874,8 +1047,13 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const startWorkout = () => {
+    // Force initialize voices when starting
     if (window.speechSynthesis) {
       window.speechSynthesis.getVoices();
+      
+      // Prime the speech system
+      const silence = new SpeechSynthesisUtterance(' ');
+      window.speechSynthesis.speak(silence);
     }
     
     setIsActive(true);
@@ -884,6 +1062,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const stopWorkout = () => {
+    // Cancel any ongoing speech
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
     setIsActive(false);
     if (repCount > 0) {
       onComplete();
@@ -942,28 +1125,31 @@ const WellyVision: React.FC<WellyVisionProps> = ({
               </div>
             </div>
             
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="bg-black/50 text-white" 
-                onClick={toggleFeedbackMode}
+            <div className="absolute bottom-4 left-4 right-4 space-y-2">
+              <ToggleGroup 
+                type="single" 
+                className="justify-center bg-black/50 p-1 rounded-lg w-full" 
+                value={feedbackMode}
+                onValueChange={(value) => value && toggleVoiceMode(value)}
               >
-                {feedbackMode === "motivational" ? (
-                  <Volume2 className="h-4 w-4 mr-2" />
-                ) : (
-                  <Volume1 className="h-4 w-4 mr-2" />
-                )}
-                {feedbackMode === "motivational" ? "Motivational" : "Technical"}
-              </Button>
+                <ToggleGroupItem value="motivational" className="flex-1 text-xs">
+                  Motivational
+                </ToggleGroupItem>
+                <ToggleGroupItem value="strict" className="flex-1 text-xs">
+                  Strict Coach
+                </ToggleGroupItem>
+                <ToggleGroupItem value="minimal" className="flex-1 text-xs">
+                  Calm/Minimal
+                </ToggleGroupItem>
+              </ToggleGroup>
               
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="bg-black/50 text-white" 
+                className="bg-black/50 text-white w-full" 
                 onClick={toggleLanguage}
               >
-                {language === "en" ? "EN" : "PT-BR"}
+                {language === "en" ? "Switch to Portuguese" : "Switch to English"}
               </Button>
             </div>
           </>
