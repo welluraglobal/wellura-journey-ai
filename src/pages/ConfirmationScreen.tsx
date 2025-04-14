@@ -24,7 +24,7 @@ const ConfirmationScreen = () => {
 
   useEffect(() => {
     // Check if user has already accepted the terms
-    if (userProfile && userProfile.disclaimer_accepted) {
+    if (userProfile && userProfile.health_disclaimer_accepted) {
       navigate("/dashboard");
     }
   }, [userProfile, navigate]);
@@ -37,7 +37,7 @@ const ConfirmationScreen = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          disclaimer_accepted: true
+          health_disclaimer_accepted: true
         })
         .eq('id', userId);
       
@@ -46,7 +46,7 @@ const ConfirmationScreen = () => {
       // Update context with accepted status
       setUserProfile({
         ...userProfile,
-        disclaimer_accepted: true
+        health_disclaimer_accepted: true
       });
       
       toast({

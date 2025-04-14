@@ -44,7 +44,7 @@ const ConfirmationScreens = () => {
         .update({ 
           privacy_accepted: true, 
           health_disclaimer_accepted: true 
-        } as any)
+        })
         .eq('id', userId);
       
       if (error) throw error;

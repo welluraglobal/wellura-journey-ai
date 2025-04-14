@@ -50,7 +50,7 @@ function AppContent() {
   const { authState } = useAuth();
   const { userProfile } = useUser();
   const isLoggedIn = authState.isAuthenticated;
-  const hasAcceptedDisclaimer = userProfile?.disclaimer_accepted;
+  const hasAcceptedDisclaimer = userProfile?.health_disclaimer_accepted;
 
   useEffect(() => {
     console.log("App component rendered");
