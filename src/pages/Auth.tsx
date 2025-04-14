@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (authState.isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/confirmation");
     }
   }, [authState.isAuthenticated, navigate]);
 
