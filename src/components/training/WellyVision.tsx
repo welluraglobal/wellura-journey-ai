@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Volume2, Volume1, CheckCircle2 } from "lucide-react";
@@ -38,13 +37,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const orientation = useOrientation();
   const { firstName } = useUser();
   
-  // Exercise detection state
   const [isPerformingExercise, setIsPerformingExercise] = useState(false);
   const [exerciseProgress, setExerciseProgress] = useState(0);
   const [keypoints, setKeypoints] = useState<any>(null);
   const [lastExerciseTime, setLastExerciseTime] = useState(0);
   
-  // Initialize camera
   useEffect(() => {
     if (isActive && videoRef.current) {
       initCamera();
@@ -57,7 +54,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     return () => {
       stopPoseDetection();
       
-      // Stop camera stream
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         const tracks = stream.getTracks();
@@ -66,14 +62,11 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     };
   }, [isActive]);
   
-  // Check for workout completion
   useEffect(() => {
     if (repCount >= targetReps) {
-      // Workout completed
       playFeedback(getCompletionPhrase());
       setIsActive(false);
       
-      // Delay to allow final feedback to be heard
       setTimeout(() => {
         onComplete();
         toast({
@@ -115,15 +108,13 @@ const WellyVision: React.FC<WellyVisionProps> = ({
           description: "Welly is now watching your form!",
         });
         
-        // Play welcome message as soon as camera is initialized
         if (!hasPlayedIntro) {
           setTimeout(() => {
             playWelcomeMessage();
             setHasPlayedIntro(true);
-          }, 500); // Small delay to ensure camera is fully initialized
+          }, 500);
         }
         
-        // Start pose detection after the video is loaded
         videoRef.current.onloadeddata = () => {
           startPoseDetection();
         };
@@ -142,24 +133,20 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const startPoseDetection = () => {
     if (!videoRef.current || !canvasRef.current) return;
     
-    // Set up canvas for visualization
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
     
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
     
-    // Exercise-specific motion detection variables
     let motionBuffer: number[] = [];
-    const bufferSize = 10; // Store last 10 positions
+    const bufferSize = 10;
     
     const detectPose = () => {
       if (!videoRef.current || !canvasRef.current || !ctx) return;
       
-      // Clear canvas
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       
-      // Draw video frame
       ctx.drawImage(
         videoRef.current, 
         0, 0, 
@@ -167,145 +154,155 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         canvasRef.current.height
       );
       
-      // Exercise-specific detection logic
       const frameWidth = canvasRef.current.width;
       const frameHeight = canvasRef.current.height;
       
-      // Determine the region to analyze based on exercise type
-      let sampleRegionX = 0;
-      let sampleRegionY = 0;
-      let sampleWidth = 0;
-      let sampleHeight = 0;
+      let trackingRegions: {name: string, x: number, y: number, width: number, height: number, color: string}[] = [];
       
       switch(exerciseName) {
         case "Squat":
-          // Focus on lower body for squats
-          sampleRegionX = Math.floor(frameWidth * 0.4); // 40% from left
-          sampleRegionY = Math.floor(frameHeight * 0.6); // 60% from top (lower part)
-          sampleWidth = Math.floor(frameWidth * 0.2); // 20% of width
-          sampleHeight = Math.floor(frameHeight * 0.3); // 30% of height
+          trackingRegions = [
+            {
+              name: "Upper Body",
+              x: Math.floor(frameWidth * 0.3),
+              y: Math.floor(frameHeight * 0.15),
+              width: Math.floor(frameWidth * 0.4),
+              height: Math.floor(frameHeight * 0.3),
+              color: "rgba(0, 255, 0, 0.5)"
+            },
+            {
+              name: "Lower Body",
+              x: Math.floor(frameWidth * 0.25),
+              y: Math.floor(frameHeight * 0.5),
+              width: Math.floor(frameWidth * 0.5),
+              height: Math.floor(frameHeight * 0.4),
+              color: "rgba(255, 0, 0, 0.5)"
+            }
+          ];
           break;
           
         case "Bicep Curl":
-          // Focus on arm region for bicep curls
-          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
-          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top (middle area)
-          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
-          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          trackingRegions = [
+            {
+              name: "Arms",
+              x: Math.floor(frameWidth * 0.2),
+              y: Math.floor(frameHeight * 0.2),
+              width: Math.floor(frameWidth * 0.6),
+              height: Math.floor(frameHeight * 0.4),
+              color: "rgba(0, 0, 255, 0.5)"
+            }
+          ];
           break;
           
         case "Push-up":
-          // Focus on upper body for push-ups
-          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
-          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top
-          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
-          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          trackingRegions = [
+            {
+              name: "Full Upper Body",
+              x: Math.floor(frameWidth * 0.2),
+              y: Math.floor(frameHeight * 0.1),
+              width: Math.floor(frameWidth * 0.6),
+              height: Math.floor(frameHeight * 0.6),
+              color: "rgba(255, 165, 0, 0.5)"
+            }
+          ];
           break;
           
         case "Plank":
-          // Monitor the entire body for planks
-          sampleRegionX = Math.floor(frameWidth * 0.2); // 20% from left
-          sampleRegionY = Math.floor(frameHeight * 0.3); // 30% from top
-          sampleWidth = Math.floor(frameWidth * 0.6); // 60% of width
-          sampleHeight = Math.floor(frameHeight * 0.4); // 40% of height
+          trackingRegions = [
+            {
+              name: "Full Body",
+              x: Math.floor(frameWidth * 0.1),
+              y: Math.floor(frameHeight * 0.1),
+              width: Math.floor(frameWidth * 0.8),
+              height: Math.floor(frameHeight * 0.8),
+              color: "rgba(128, 0, 128, 0.5)"
+            }
+          ];
           break;
           
         case "Shoulder Press":
-          // Focus on upper body and shoulders
-          sampleRegionX = Math.floor(frameWidth * 0.3); // 30% from left
-          sampleRegionY = Math.floor(frameHeight * 0.2); // 20% from top (upper area)
-          sampleWidth = Math.floor(frameWidth * 0.4); // 40% of width
-          sampleHeight = Math.floor(frameHeight * 0.3); // 30% of height
+          trackingRegions = [
+            {
+              name: "Upper Body",
+              x: Math.floor(frameWidth * 0.2),
+              y: Math.floor(frameHeight * 0.1),
+              width: Math.floor(frameWidth * 0.6),
+              height: Math.floor(frameHeight * 0.4),
+              color: "rgba(255, 192, 203, 0.5)"
+            },
+            {
+              name: "Arms",
+              x: Math.floor(frameWidth * 0.15),
+              y: Math.floor(frameHeight * 0.1),
+              width: Math.floor(frameWidth * 0.7),
+              height: Math.floor(frameHeight * 0.3),
+              color: "rgba(0, 128, 128, 0.5)"
+            }
+          ];
           break;
           
         default:
-          // Default region covers the center of the frame
-          sampleRegionX = Math.floor(frameWidth * 0.3);
-          sampleRegionY = Math.floor(frameHeight * 0.3);
-          sampleWidth = Math.floor(frameWidth * 0.4);
-          sampleHeight = Math.floor(frameHeight * 0.4);
+          trackingRegions = [
+            {
+              name: "Full Body",
+              x: Math.floor(frameWidth * 0.2),
+              y: Math.floor(frameHeight * 0.2),
+              width: Math.floor(frameWidth * 0.6),
+              height: Math.floor(frameHeight * 0.6),
+              color: "rgba(100, 100, 100, 0.5)"
+            }
+          ];
       }
       
-      const imageData = ctx.getImageData(
-        sampleRegionX, 
-        sampleRegionY, 
-        sampleWidth, 
-        sampleHeight
-      );
+      let totalMotionValue = 0;
       
-      // Exercise-specific motion detection
-      let motionValue = 0;
+      trackingRegions.forEach(region => {
+        const imageData = ctx.getImageData(
+          region.x, 
+          region.y, 
+          region.width, 
+          region.height
+        );
+        
+        const regionMotionValue = detectMotionInRegion(imageData, region.width, region.height, exerciseName);
+        totalMotionValue += regionMotionValue;
+        
+        ctx.strokeStyle = region.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(region.x, region.y, region.width, region.height);
+        
+        ctx.fillStyle = "white";
+        ctx.font = '14px Arial';
+        ctx.fillText(`Tracking: ${region.name}`, region.x + 5, region.y - 5);
+      });
       
-      switch(exerciseName) {
-        case "Squat":
-          // For squats, we analyze vertical motion
-          motionValue = detectSquatMotion(imageData, sampleWidth, sampleHeight);
-          break;
-          
-        case "Bicep Curl":
-          // For bicep curls, we analyze arm flexion
-          motionValue = detectBicepCurlMotion(imageData, sampleWidth, sampleHeight);
-          break;
-          
-        case "Push-up":
-          // For push-ups, we analyze vertical movement of upper body
-          motionValue = detectPushUpMotion(imageData, sampleWidth, sampleHeight);
-          break;
-          
-        case "Plank":
-          // For planks, we look for stability and small movements
-          motionValue = detectPlankMotion(imageData, sampleWidth, sampleHeight);
-          break;
-          
-        case "Shoulder Press":
-          // For shoulder press, we analyze upward motion
-          motionValue = detectShoulderPressMotion(imageData, sampleWidth, sampleHeight);
-          break;
-          
-        default:
-          // Use general motion detection as fallback
-          motionValue = detectGeneralMotion(imageData, sampleWidth, sampleHeight);
-      }
+      const normalizedMotionValue = totalMotionValue / trackingRegions.length;
       
-      // Add to motion buffer
-      motionBuffer.push(motionValue);
+      motionBuffer.push(normalizedMotionValue);
       if (motionBuffer.length > bufferSize) {
         motionBuffer.shift();
       }
       
-      // Calculate motion trend (are we going up/down/stable)
       const motionTrend = calculateMotionTrend(motionBuffer);
       
-      // Draw visualization rectangle for debugging
-      ctx.strokeStyle = isPerformingExercise ? 'green' : 'red';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(sampleRegionX, sampleRegionY, sampleWidth, sampleHeight);
-      
-      // Draw text indicators
       ctx.font = '16px Arial';
       ctx.fillStyle = 'white';
       ctx.fillText(`Rep Count: ${repCount}`, 10, 30);
       ctx.fillText(`Now tracking: ${exerciseName}`, 10, 60);
       ctx.fillText(`Motion: ${motionTrend.toFixed(2)}`, 10, 90);
       
-      // Exercise-specific detection logic
       const exerciseThreshold = getExerciseThreshold(exerciseName);
       const now = Date.now();
       
-      // Exercise-specific rep detection
       detectExerciseRep(exerciseName, motionTrend, exerciseThreshold, now);
       
-      // Schedule next frame
       animationRef.current = requestAnimationFrame(detectPose);
     };
     
-    // Start detection loop
     animationRef.current = requestAnimationFrame(detectPose);
   };
   
-  // Exercise-specific motion detection functions
-  const detectSquatMotion = (imageData: ImageData, width: number, height: number): number => {
-    // Calculate movement based on pixel brightness in lower body region
+  const detectMotionInRegion = (imageData: ImageData, width: number, height: number, exercise: string): number => {
     let totalBrightness = 0;
     for (let i = 0; i < imageData.data.length; i += 4) {
       const r = imageData.data[i];
@@ -315,117 +312,56 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       totalBrightness += brightness;
     }
     
-    return totalBrightness / (width * height);
-  };
-  
-  const detectBicepCurlMotion = (imageData: ImageData, width: number, height: number): number => {
-    // Focus on vertical motion in arm region for bicep curl
-    let totalBrightness = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const brightness = (r + g + b) / 3;
-      totalBrightness += brightness;
-    }
+    const avgBrightness = totalBrightness / (width * height);
     
-    return totalBrightness / (width * height);
-  };
-  
-  const detectPushUpMotion = (imageData: ImageData, width: number, height: number): number => {
-    // Detect vertical movement of upper body for push-ups
-    let totalBrightness = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const brightness = (r + g + b) / 3;
-      totalBrightness += brightness;
+    switch(exercise) {
+      case "Squat":
+        return avgBrightness * 1.2;
+      case "Bicep Curl":
+        return avgBrightness * 1.3;
+      case "Push-up":
+        return avgBrightness * 1.1;
+      case "Plank":
+        return avgBrightness * 0.8;
+      case "Shoulder Press":
+        return avgBrightness * 1.2;
+      default:
+        return avgBrightness;
     }
-    
-    return totalBrightness / (width * height);
-  };
-  
-  const detectPlankMotion = (imageData: ImageData, width: number, height: number): number => {
-    // For planks, minor movement is normal, but large changes mean breaking form
-    let totalBrightness = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const brightness = (r + g + b) / 3;
-      totalBrightness += brightness;
-    }
-    
-    return totalBrightness / (width * height);
-  };
-  
-  const detectShoulderPressMotion = (imageData: ImageData, width: number, height: number): number => {
-    // Detect upward motion for shoulder press
-    let totalBrightness = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const brightness = (r + g + b) / 3;
-      totalBrightness += brightness;
-    }
-    
-    return totalBrightness / (width * height);
-  };
-  
-  const detectGeneralMotion = (imageData: ImageData, width: number, height: number): number => {
-    // Generic motion detection as fallback
-    let totalBrightness = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const brightness = (r + g + b) / 3;
-      totalBrightness += brightness;
-    }
-    
-    return totalBrightness / (width * height);
   };
   
   const getExerciseThreshold = (exercise: string): number => {
-    // Different exercises have different thresholds for motion detection
     switch(exercise) {
       case "Squat":
-        return 5;
+        return 4.5;
       case "Bicep Curl":
-        return 4;
+        return 3.5;
       case "Push-up":
-        return 6;
+        return 5.5;
       case "Plank":
-        return 2; // Planks require stability, so a lower threshold
+        return 1.8;
       case "Shoulder Press":
-        return 5;
+        return 4.5;
       default:
-        return 5;
+        return 4.5;
     }
   };
   
   const detectExerciseRep = (exercise: string, motionTrend: number, threshold: number, now: number) => {
-    // Exercise-specific rep detection logic
     switch(exercise) {
       case "Squat":
-        // For squats: negative trend means going down, positive means going up
         if (!isPerformingExercise && motionTrend < -threshold) {
           setIsPerformingExercise(true);
-          setExerciseProgress(25); // Start of squat
+          setExerciseProgress(25);
         }
         
         if (isPerformingExercise) {
           if (motionTrend < -threshold) {
-            // Still going down
             setExerciseProgress(prev => Math.min(prev + 15, 50));
           } else if (motionTrend > threshold) {
-            // Going up - completing the squat
             setExerciseProgress(prev => {
               const newProgress = prev + 15;
               if (newProgress >= 100) {
-                // Complete rep if it's been at least 1 second since last rep
                 if (now - lastExerciseTime > 1000) {
                   setIsPerformingExercise(false);
                   setLastExerciseTime(now);
@@ -444,22 +380,18 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         break;
         
       case "Bicep Curl":
-        // For bicep curls: positive trend means curling up, negative means lowering
         if (!isPerformingExercise && motionTrend > threshold) {
           setIsPerformingExercise(true);
-          setExerciseProgress(25); // Start of curl
+          setExerciseProgress(25);
         }
         
         if (isPerformingExercise) {
           if (motionTrend > threshold) {
-            // Still curling up
             setExerciseProgress(prev => Math.min(prev + 15, 50));
           } else if (motionTrend < -threshold) {
-            // Lowering - completing the curl
             setExerciseProgress(prev => {
               const newProgress = prev + 15;
               if (newProgress >= 100) {
-                // Complete rep if it's been at least 1 second since last rep
                 if (now - lastExerciseTime > 1000) {
                   setIsPerformingExercise(false);
                   setLastExerciseTime(now);
@@ -478,22 +410,18 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         break;
         
       case "Push-up":
-        // For push-ups: negative trend means going down, positive means pushing up
         if (!isPerformingExercise && motionTrend < -threshold) {
           setIsPerformingExercise(true);
-          setExerciseProgress(25); // Start of push-up
+          setExerciseProgress(25);
         }
         
         if (isPerformingExercise) {
           if (motionTrend < -threshold) {
-            // Still going down
             setExerciseProgress(prev => Math.min(prev + 15, 50));
           } else if (motionTrend > threshold) {
-            // Pushing up - completing the push-up
             setExerciseProgress(prev => {
               const newProgress = prev + 15;
               if (newProgress >= 100) {
-                // Complete rep if it's been at least 1 second since last rep
                 if (now - lastExerciseTime > 1000) {
                   setIsPerformingExercise(false);
                   setLastExerciseTime(now);
@@ -512,42 +440,33 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         break;
         
       case "Plank":
-        // For planks: monitor stability, count time instead of reps
-        // This is just a placeholder as planks require time tracking rather than rep counting
         if (Math.abs(motionTrend) < threshold) {
-          // Stable plank - progress increases with time
           setIsPerformingExercise(true);
           setExerciseProgress(prev => Math.min(prev + 1, 100));
           
-          // Check if we should provide feedback
-          if (now - lastExerciseTime > 5000) { // Every 5 seconds
+          if (now - lastExerciseTime > 5000) {
             provideFeedback(repCount, targetReps);
             setLastExerciseTime(now);
           }
         } else {
-          // Too much movement - breaking form
           setIsPerformingExercise(false);
           setExerciseProgress(0);
         }
         break;
         
       case "Shoulder Press":
-        // For shoulder press: positive trend means pressing up, negative means lowering
         if (!isPerformingExercise && motionTrend > threshold) {
           setIsPerformingExercise(true);
-          setExerciseProgress(25); // Start of press
+          setExerciseProgress(25);
         }
         
         if (isPerformingExercise) {
           if (motionTrend > threshold) {
-            // Still pressing up
             setExerciseProgress(prev => Math.min(prev + 15, 50));
           } else if (motionTrend < -threshold) {
-            // Lowering - completing the press
             setExerciseProgress(prev => {
               const newProgress = prev + 15;
               if (newProgress >= 100) {
-                // Complete rep if it's been at least 1 second since last rep
                 if (now - lastExerciseTime > 1000) {
                   setIsPerformingExercise(false);
                   setLastExerciseTime(now);
@@ -566,7 +485,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         break;
         
       default:
-        // Use squat detection as fallback
         if (!isPerformingExercise && motionTrend < -threshold) {
           setIsPerformingExercise(true);
           setExerciseProgress(25);
@@ -600,7 +518,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   const calculateMotionTrend = (buffer: number[]) => {
     if (buffer.length < 2) return 0;
     
-    // Calculate the average rate of change using the last few frames
     let sum = 0;
     for (let i = 1; i < buffer.length; i++) {
       sum += buffer[i] - buffer[i-1];
@@ -620,7 +537,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     const remainingReps = targetReps - currentRep;
     
     if (language === "pt-br") {
-      // Portuguese motivational phrases
       if (remainingReps > 5) {
         const startPhrases = [
           "Vamos lá!",
@@ -655,7 +571,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         return finalPhrases[Math.floor(Math.random() * finalPhrases.length)];
       }
     } else {
-      // English motivational phrases
       if (remainingReps > 5) {
         const startPhrases = [
           "Let's go!",
@@ -693,7 +608,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const getTechnicalPhrase = (): string => {
-    // Exercise-specific technical feedback
     if (language === "pt-br") {
       let exercisePhrases: string[] = [];
       
@@ -782,7 +696,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       
       return exercisePhrases[Math.floor(Math.random() * exercisePhrases.length)];
     } else {
-      // English technical phrases
       let exercisePhrases: string[] = [];
       
       switch (exerciseName) {
@@ -902,7 +815,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   
   const provideFeedback = (currentRep: number, targetReps: number) => {
     const now = Date.now();
-    // Limit feedback frequency to avoid overwhelming the user
     if (now - lastFeedbackTime < 3000) return; 
     
     let feedback = "";
@@ -910,7 +822,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     if (feedbackMode === "motivational") {
       feedback = getMotivationalPhrase(currentRep, targetReps);
     } else {
-      // Technical mode - form feedback
       feedback = getTechnicalPhrase();
     }
     
@@ -919,23 +830,18 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const playFeedback = (text: string) => {
-    // Text-to-speech with improved voice selection and parameters
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Get all available voices
       const voices = window.speechSynthesis.getVoices();
       
-      // Select appropriate voice based on language
       if (language === "pt-br") {
-        // Try to find Luciana or any Portuguese voice
         utterance.voice = voices.find(voice => 
           voice.name.includes('Luciana') || 
           voice.lang === 'pt-BR'
         ) || null;
         utterance.lang = "pt-BR";
       } else {
-        // Find a good English voice
         utterance.voice = voices.find(voice => 
           voice.name.includes('Samantha') || 
           voice.lang === 'en-US'
@@ -943,10 +849,9 @@ const WellyVision: React.FC<WellyVisionProps> = ({
         utterance.lang = "en-US";
       }
       
-      // Set energetic speech parameters
-      utterance.rate = 1.05;  // Slightly faster than normal
-      utterance.pitch = 1.1; // Higher pitch for more energy
-      utterance.volume = 1;  // Maximum volume
+      utterance.rate = 1.05;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
       
       window.speechSynthesis.speak(utterance);
     }
@@ -969,7 +874,6 @@ const WellyVision: React.FC<WellyVisionProps> = ({
   };
   
   const startWorkout = () => {
-    // Initialize voice list if needed
     if (window.speechSynthesis) {
       window.speechSynthesis.getVoices();
     }
@@ -1017,24 +921,26 @@ const WellyVision: React.FC<WellyVisionProps> = ({
               </div>
             </div>
             
-            {/* Exercise identification label */}
             <div className="absolute top-20 left-4 right-4 flex justify-center">
               <div className="bg-primary/80 px-6 py-2 rounded-full text-base font-semibold">
                 Now tracking: {exerciseName}
               </div>
             </div>
             
-            {/* Exercise progress indicator */}
-            {isPerformingExercise && (
-              <div className="absolute bottom-20 left-4 right-4">
-                <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div 
-                    className="bg-primary h-2.5 rounded-full" 
-                    style={{ width: `${exerciseProgress}%` }}
-                  ></div>
-                </div>
+            <div className="absolute bottom-20 left-4 right-4">
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                <div 
+                  className="bg-primary h-2.5 rounded-full" 
+                  style={{ width: `${exerciseProgress}%` }}
+                ></div>
               </div>
-            )}
+            </div>
+            
+            <div className="absolute bottom-28 left-4 right-4 flex justify-center">
+              <div className="bg-black/40 px-4 py-1 rounded-full text-sm">
+                Welly is tracking your form
+              </div>
+            </div>
             
             <div className="absolute bottom-4 left-4 right-4 flex justify-between">
               <Button 
