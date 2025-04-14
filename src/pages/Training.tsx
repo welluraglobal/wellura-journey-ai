@@ -160,7 +160,7 @@ const mockTrainingPlans = [
       { id: "w1", name: "Day 1: Chest & Triceps", exercises: ["Bench Press", "Incline Dumbbell Press", "Chest Flyes", "Tricep Dips", "Tricep Pushdowns"] },
       { id: "w2", name: "Day 2: Back & Biceps", exercises: ["Pull-ups", "Bent-over Rows", "Lat Pulldowns", "Bicep Curls", "Hammer Curls"] },
       { id: "w3", name: "Day 3: Legs & Core", exercises: ["Squats", "Deadlifts", "Leg Press", "Leg Curls", "Plank Circuit"] },
-      { id: "w4", name: "Day 4: Shoulders & Arms", exercises: ["Shoulder Press", "Lateral Raises", "Front Raises", "Skull Crushers", "Concentration Curls"] }
+      { id: "w4", name: "Shoulders & Arms", exercises: ["Shoulder Press", "Lateral Raises", "Front Raises", "Skull Crushers", "Concentration Curls"] }
     ]
   },
   {
@@ -354,7 +354,7 @@ const Training = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <NavBar />
       
-      <main className="flex-1 p-6 md:p-10">
+      <main className="flex-1 p-6 md:p-10 safe-area-inset">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center">
@@ -394,7 +394,7 @@ const Training = () => {
               
               <TabsContent value="plans" className="space-y-6">
                 {quizCompleted && recommendedPlanObj && (
-                  <Card className="bg-primary/5 border-primary mb-8">
+                  <Card className="bg-primary/5 border-primary mb-8 relative">
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <ClipboardCheck className="mr-2 h-5 w-5 text-primary" />
@@ -419,21 +419,28 @@ const Training = () => {
                         </span>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between bg-muted/10 pt-4">
-                      <Button variant="outline" size="sm" onClick={handleStartOver}>
-                        Retake Quiz
-                      </Button>
-                      <div className="flex gap-2">
+                    <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 bg-muted/10 pt-4">
+                      <div className="flex w-full justify-between items-center space-x-2">
                         <Button 
                           variant="outline" 
-                          size="sm"
+                          size="sm" 
+                          className="flex-1"
+                          onClick={handleStartOver}
+                        >
+                          Retake Quiz
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
                           onClick={() => handleSchedulePlan(recommendedPlanObj.id, recommendedPlanObj.name)}
                         >
                           <Calendar className="h-4 w-4 mr-2" />
                           Schedule
                         </Button>
                         <Button 
-                          size="sm"
+                          size="sm" 
+                          className="flex-1"
                           onClick={() => handleStartPlan(recommendedPlanObj.id, recommendedPlanObj.name)}
                         >
                           Start Plan
@@ -613,7 +620,7 @@ const Training = () => {
                                           
                                           <p className="text-muted-foreground text-sm mb-3">
                                             {exerciseDescriptions[exercise] || 
-                                              "Perform this exercise with proper form, focusing on controlled movements and proper breathing technique."}
+                                              "Perform this exercise with proper form, focusing on controlled movements."}
                                           </p>
                                           
                                           <div className="flex flex-wrap gap-2 mt-4">
