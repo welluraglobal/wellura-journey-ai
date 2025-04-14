@@ -89,9 +89,9 @@ const WellyVision: React.FC<WellyVisionProps> = ({
     let welcomeText = "";
     
     if (language === "pt-br") {
-      welcomeText = `Bem-vindo, ${userName}. Vamos começar seu treino! O primeiro exercício de hoje é: ${exerciseName}. Eu vou te ajudar a executar com perfeição para que você tenha resultados reais. Vamos nessa!`;
+      welcomeText = `Bem-vindo, ${userName}. Este exercício é chamado ${exerciseName}. Eu vou te ajudar a executar com perfeição para que você tenha resultados reais. Vamos nessa!`;
     } else {
-      welcomeText = `Welcome, ${userName}. Let's start your workout! Your first exercise today is: ${exerciseName}. I'll help you perform it perfectly so you can get real results. Let's do this!`;
+      welcomeText = `Welcome, ${userName}. This exercise is called ${exerciseName}. I'll guide you to perform it correctly for real results. Let's do this!`;
     }
     
     playFeedback(welcomeText);
@@ -285,7 +285,7 @@ const WellyVision: React.FC<WellyVisionProps> = ({
       ctx.font = '16px Arial';
       ctx.fillStyle = 'white';
       ctx.fillText(`Rep Count: ${repCount}`, 10, 30);
-      ctx.fillText(`${exerciseName}: ${isPerformingExercise ? 'IN PROGRESS' : 'READY'}`, 10, 60);
+      ctx.fillText(`Now tracking: ${exerciseName}`, 10, 60);
       ctx.fillText(`Motion: ${motionTrend.toFixed(2)}`, 10, 90);
       
       // Exercise-specific detection logic
@@ -1014,6 +1014,13 @@ const WellyVision: React.FC<WellyVisionProps> = ({
               </Button>
               <div className="bg-black/50 px-4 py-2 rounded-full text-lg font-bold">
                 {repCount} / {targetReps}
+              </div>
+            </div>
+            
+            {/* Exercise identification label */}
+            <div className="absolute top-20 left-4 right-4 flex justify-center">
+              <div className="bg-primary/80 px-6 py-2 rounded-full text-base font-semibold">
+                Now tracking: {exerciseName}
               </div>
             </div>
             
