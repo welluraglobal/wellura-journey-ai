@@ -1,8 +1,7 @@
-
 import { ToasterToast, Action, ToastState, actionTypes } from "./types";
 
 export const TOAST_LIMIT = 5;
-export const TOAST_REMOVE_DELAY = 1000000;
+export const TOAST_REMOVE_DELAY = 3000; // Mudado de 1000000 para 3000 milissegundos (3 segundos)
 
 export const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
