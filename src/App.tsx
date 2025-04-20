@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -23,8 +22,8 @@ import MealPlans from "@/pages/MealPlans";
 import Training from "@/pages/Training";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
+import MobileOnlyGuard from "@/components/MobileOnlyGuard";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -34,7 +33,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// App wrapper to provide all contexts
 function AppWrapper() {
   return (
     <AuthProvider>
@@ -49,7 +47,6 @@ function AppWrapper() {
   );
 }
 
-// Protected route component
 function ProtectedRoute({ 
   children, 
   requireAuth = true, 
@@ -65,7 +62,6 @@ function ProtectedRoute({
   const isLoggedIn = authState.isAuthenticated;
   const hasAcceptedDisclaimer = userProfile?.health_disclaimer_accepted;
 
-  // Skip navigation checks when already at certain pages
   const isAtConfirmationScreen = location.pathname === "/confirmation";
   const isAtAuthScreen = location.pathname === "/auth";
 
@@ -86,7 +82,6 @@ function ProtectedRoute({
   return <>{children}</>;
 }
 
-// Main app content with more efficient authentication check
 function AppContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   
@@ -100,8 +95,7 @@ function AppContent() {
   }
   
   return (
-    <>
-      {/* Use only one toast provider */}
+    <MobileOnlyGuard>
       <Toaster />
       <Routes>
         <Route path="/" element={<Index />} />
@@ -190,9 +184,8 @@ function AppContent() {
         
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </MobileOnlyGuard>
   );
 }
 
-// Export the wrapped app
 export default AppWrapper;
