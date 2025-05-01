@@ -8,6 +8,11 @@ function isMobileDevice() {
 }
 
 const MobileOnlyGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Instead of checking the device, we'll always allow access
+  return <>{children}</>;
+  
+  // Previous implementation for reference:
+  /*
   const [allowed, setAllowed] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
@@ -30,6 +35,7 @@ const MobileOnlyGuard: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
   return <>{children}</>;
+  */
 };
 
 export default MobileOnlyGuard;
